@@ -8,11 +8,16 @@ import PlayerSprite    from '../components/game/PlayerSprite'
 import GovernorSprite, { GOV_CANVAS_PX, GOV_CX_IN_CANVAS, GOV_HEAD_IN_CANVAS, GOV_FOOT_FROM_BOT } from '../components/game/GovernorSprite'
 import CRTComputer     from '../components/game/CRTComputer'
 import GovernorHUD     from '../components/game/GovernorHUD'
+import MobileControls  from '../components/game/MobileControls'
 import ResumeScene     from './ResumeScene'
 
-const TRIGGER_DIST   = 130   // px — how close player must be to interact
-const DIALOGUE_DIST  = 160   // show speech bubble range
-const HUD_LOCK_DIST  = 220   // within this range, E key works
+const isMobile = () =>
+  /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+  (typeof window !== 'undefined' && window.innerWidth <= 1024 && 'ontouchstart' in window)
+
+const TRIGGER_DIST   = 130
+const DIALOGUE_DIST  = 160
+const HUD_LOCK_DIST  = 220
 
 export default function GovernorWorldScene({ containerWidth, containerHeight, startX, startFacing = 1, startVelocity = 0 }) {
   const { dispatch }  = useGame()
@@ -75,7 +80,7 @@ export default function GovernorWorldScene({ containerWidth, containerHeight, st
         eHandledRef.current = true
         setHudOpen(true)
         setGovAnim('idle')
-        setGovFacing(playerXRef.current < governorX ? 1 : -1)  // face player
+        setGovFacing(playerXRef.current < governorX ? 1 : -1)
       }
       // Escape closes HUD
       if (e.code === 'Escape' && hudOpen) setHudOpen(false)
@@ -88,6 +93,18 @@ export default function GovernorWorldScene({ containerWidth, containerHeight, st
     window.addEventListener('keyup',   up)
     return () => { window.removeEventListener('keydown', dn); window.removeEventListener('keyup', up) }
   }, [nearGov, hudOpen, governorX])
+
+  // ── Mobile: tap on governor to interact ────────────────────────────────────
+  const handleTap = useCallback((tapPos) => {
+    if (hudOpen) return
+    // Map tap screen X to governor screen X — check proximity
+    const dist = Math.abs(tapPos.x - govXRef.current)
+    if (dist < HUD_LOCK_DIST * 1.5) {
+      setHudOpen(true)
+      setGovAnim('idle')
+      setGovFacing(playerXRef.current < govXRef.current ? 1 : -1)
+    }
+  }, [hudOpen])
 
   // ── Governor wanders slightly left/right when not talking ─────────────────
   const govXRef    = useRef(governorX)
@@ -277,16 +294,20 @@ export default function GovernorWorldScene({ containerWidth, containerHeight, st
             WebkitBackdropFilter:'blur(28px) saturate(2.2) brightness(1.15)',
             background:'rgba(255,255,255,0.60)',
             border:'2px solid rgba(255,255,255,0.92)',
-            borderRadius:18, padding:'14px 26px 12px',
+            borderRadius: isMobile() ? 12 : 18,
+            padding: isMobile() ? '8px 14px 7px' : '14px 26px 12px',
             boxShadow:'0 8px 40px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.15), inset 0 1.5px 0 rgba(255,255,255,0.95)',
             position:'relative', display:'inline-block',
           }}>
             <div style={{
               fontFamily:'"Cormorant Garamond","Palatino Linotype",Georgia,serif',
-              fontStyle:'italic', fontWeight:700, fontSize:20,
+              fontStyle:'italic', fontWeight:700,
+              fontSize: isMobile() ? 13 : 20,
               lineHeight:1, letterSpacing:'0.015em', color:'#0d0d1a', whiteSpace:'nowrap',
             }}>
-              interact with me, really. press E, it should work, i hope so.
+              {isMobile()
+                ? 'tap me to chat'
+                : 'interact with me, really. press E, it should work, i hope so.'}
             </div>
             <div style={{
               position:'absolute', bottom:-12, left:'50%', transform:'translateX(-50%)',
@@ -313,13 +334,15 @@ export default function GovernorWorldScene({ containerWidth, containerHeight, st
             WebkitBackdropFilter:'blur(28px) saturate(2.2) brightness(1.15)',
             background:'rgba(255,255,255,0.60)',
             border:'2px solid rgba(255,255,255,0.92)',
-            borderRadius:18, padding:'14px 26px 12px',
+            borderRadius: isMobile() ? 12 : 18,
+            padding: isMobile() ? '8px 14px 7px' : '14px 26px 12px',
             boxShadow:'0 8px 40px rgba(0,0,0,0.25), inset 0 1.5px 0 rgba(255,255,255,0.95)',
             position:'relative', display:'inline-block',
           }}>
             <div style={{
               fontFamily:'"Cormorant Garamond","Palatino Linotype",Georgia,serif',
-              fontStyle:'italic', fontWeight:700, fontSize:20,
+              fontStyle:'italic', fontWeight:700,
+              fontSize: isMobile() ? 13 : 20,
               lineHeight:1, color:'#0d0d1a', whiteSpace:'nowrap',
             }}>
               i'm still building it.
@@ -334,8 +357,8 @@ export default function GovernorWorldScene({ containerWidth, containerHeight, st
         </div>
       )}
 
-      {/* E key prompt */}
-      {nearGov && !hudOpen && (
+      {/* E key prompt — desktop only; mobile uses tap */}
+      {nearGov && !hudOpen && !isMobile() && (
         <div style={{
           position:'absolute', bottom: containerHeight * 0.12, left:'50%', transform:'translateX(-50%)',
           background:'rgba(0,0,0,0.6)', border:'1px solid rgba(255,255,255,0.2)',
@@ -356,6 +379,30 @@ export default function GovernorWorldScene({ containerWidth, containerHeight, st
         isSprinting={isSprinting && !hudOpen}
         containerHeight={containerHeight}
       />
+
+      {/* Mobile touch zones — movement + tap-to-interact */}
+      <MobileControls
+        pressedKeys={pressedKeys}
+        visible={isMobile() && !hudOpen}
+        containerWidth={containerWidth}
+        containerHeight={containerHeight}
+      />
+
+      {/* Mobile tap-to-interact overlay on governor */}
+      {isMobile() && nearGov && !hudOpen && (
+        <div
+          onClick={() => handleTap({ x: govScreenX, y: groundY })}
+          style={{
+            position:   'absolute',
+            left:       govScreenX - 60,
+            top:        groundY - 200,
+            width:      120,
+            height:     220,
+            zIndex:     45,
+            cursor:     'pointer',
+          }}
+        />
+      )}
 
       {/* Governor HUD */}
       {hudOpen && (

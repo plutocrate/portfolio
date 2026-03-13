@@ -123,20 +123,32 @@ const C = {
 export default function ResumeScene({ onBack = null, embedded = false }) {
   const { dispatch } = useGame()
   const [in_, setIn] = useState(false)
-  useEffect(() => { const t = setTimeout(() => setIn(true), 40); return () => clearTimeout(t) }, [])
+  const [mob, setMob] = useState(false)
+  useEffect(() => {
+    const t = setTimeout(() => setIn(true), 40)
+    const checkMob = () => setMob(window.innerWidth <= 768)
+    checkMob()
+    window.addEventListener('resize', checkMob)
+    return () => { clearTimeout(t); window.removeEventListener('resize', checkMob) }
+  }, [])
+
   const goBack = () => {
     if (onBack) onBack()
     else dispatch({ type: 'SET_SCENE', scene: SCENES.INTRO_MENU, direction: -1 })
   }
 
   return (
-    <div style={{
-      position: 'absolute', inset: 0,
-      overflowY: 'auto', overflowX: 'hidden',
-      background: C.bg, color: C.white, fontFamily: C.B,
-      opacity: in_ ? 1 : 0, transition: 'opacity 0.45s ease',
-      scrollbarWidth: 'thin', scrollbarColor: `${C.xlow} transparent`,
-    }}>
+    <div
+      className="allow-scroll"
+      style={{
+        position: 'absolute', inset: 0,
+        overflowY: 'auto', overflowX: 'hidden',
+        background: C.bg, color: C.white, fontFamily: C.B,
+        opacity: in_ ? 1 : 0, transition: 'opacity 0.45s ease',
+        scrollbarWidth: 'thin', scrollbarColor: `${C.xlow} transparent`,
+        touchAction: 'pan-y',
+        WebkitOverflowScrolling: 'touch',
+      }}>
       <style>{`
         *::-webkit-scrollbar{width:3px}
         *::-webkit-scrollbar-track{background:transparent}
@@ -146,32 +158,46 @@ export default function ResumeScene({ onBack = null, embedded = false }) {
       <nav style={{
         position: 'sticky', top: 0, zIndex: 50,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 clamp(24px,5vw,72px)', height: '60px',
+        padding: mob ? '0 16px' : '0 clamp(24px,5vw,72px)',
+        height: mob ? '52px' : '60px',
         background: 'rgba(9,9,9,0.88)',
         backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
         borderBottom: `1px solid ${C.line}`,
       }}>
         <BackButton onClick={goBack} />
-        <span style={{ fontFamily: C.F, fontWeight: 600, fontSize: '13px', color: C.low, letterSpacing: '-0.01em' }}>
+        <span style={{ fontFamily: C.F, fontWeight: 600, fontSize: mob ? '11px' : '13px', color: C.low, letterSpacing: '-0.01em' }}>
           {D.name}
         </span>
-        <DownloadBtn />
+        <DownloadBtn mob={mob} />
       </nav>
 
-      <main style={{ maxWidth: '800px', margin: '0 auto', padding: 'clamp(48px,8vw,96px) clamp(24px,5vw,72px) 120px' }}>
+      <main style={{
+        maxWidth: '800px', margin: '0 auto',
+        padding: mob
+          ? '28px 16px 80px'
+          : 'clamp(48px,8vw,96px) clamp(24px,5vw,72px) 120px',
+      }}>
 
-        <header style={{ marginBottom: '80px' }}>
-          <p style={{ fontFamily: C.B, fontSize: '11px', fontWeight: 400, color: C.low, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '24px' }}>
+        <header style={{ marginBottom: mob ? '40px' : '80px' }}>
+          <p style={{ fontFamily: C.B, fontSize: '10px', fontWeight: 400, color: C.low, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: mob ? '12px' : '24px' }}>
             {D.location}
           </p>
-          <h1 style={{ fontFamily: C.F, fontWeight: 800, fontSize: 'clamp(44px,7vw,80px)', color: C.white, lineHeight: 0.96, letterSpacing: '-0.035em', marginBottom: '20px' }}>
+          <h1 style={{ fontFamily: C.F, fontWeight: 800, fontSize: mob ? '32px' : 'clamp(44px,7vw,80px)', color: C.white, lineHeight: 0.96, letterSpacing: '-0.035em', marginBottom: mob ? '12px' : '20px' }}>
             {D.name}
           </h1>
-          <p style={{ fontFamily: C.F, fontWeight: 500, fontSize: 'clamp(17px,2.2vw,22px)', color: C.mid, letterSpacing: '-0.01em', marginBottom: '40px' }}>
+          <p style={{ fontFamily: C.F, fontWeight: 500, fontSize: mob ? '14px' : 'clamp(17px,2.2vw,22px)', color: C.mid, letterSpacing: '-0.01em', marginBottom: mob ? '20px' : '40px' }}>
             {D.title}
           </p>
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0 28px', borderTop: `1px solid ${C.line}`, borderBottom: `1px solid ${C.line}` }}>
+          {/* Contact links — stack on mobile */}
+          <div style={{
+            display: 'flex',
+            flexDirection: mob ? 'column' : 'row',
+            flexWrap: mob ? 'nowrap' : 'wrap',
+            gap: mob ? '0' : '0 28px',
+            borderTop: `1px solid ${C.line}`,
+            borderBottom: `1px solid ${C.line}`,
+          }}>
             {[
               { label: D.email,    href: `mailto:${D.email}` },
               { label: D.phone,    href: `tel:${D.phone}` },
@@ -179,33 +205,56 @@ export default function ResumeScene({ onBack = null, embedded = false }) {
               { label: D.linkedin, href: `https://${D.linkedin}` },
             ].map(({ label, href }) => (
               <a key={label} href={href} target="_blank" rel="noreferrer"
-                style={{ fontFamily: C.B, fontSize: '14px', fontWeight: 400, color: C.mid, textDecoration: 'none', padding: '13px 0', transition: 'color 0.16s' }}
+                style={{
+                  fontFamily: C.B,
+                  fontSize: mob ? '12px' : '14px',
+                  fontWeight: 400, color: C.mid,
+                  textDecoration: 'none',
+                  padding: mob ? '10px 0' : '13px 0',
+                  borderBottom: mob ? `1px solid ${C.line}` : 'none',
+                  transition: 'color 0.16s',
+                  display: 'block',
+                }}
+                onTouchStart={e => e.currentTarget.style.color = C.white}
+                onTouchEnd={e => e.currentTarget.style.color = C.mid}
                 onMouseEnter={e => e.currentTarget.style.color = C.white}
                 onMouseLeave={e => e.currentTarget.style.color = C.mid}
               >{label}</a>
             ))}
           </div>
 
-          <p style={{ fontFamily: C.B, fontWeight: 300, fontSize: '17px', lineHeight: 1.85, color: C.mid, marginTop: '36px', maxWidth: '600px' }}>
+          <p style={{
+            fontFamily: C.B, fontWeight: 300,
+            fontSize: mob ? '13px' : '17px',
+            lineHeight: 1.85, color: C.mid,
+            marginTop: mob ? '20px' : '36px',
+            maxWidth: '600px',
+          }}>
             {D.summary}
           </p>
         </header>
 
-        <Sect label="Experience">
+        <Sect label="Experience" mob={mob}>
           {D.experience.map((e, i) => (
-            <div key={i} style={{ display: 'grid', gridTemplateColumns: 'minmax(100px,150px) 1fr', gap: '0 40px', padding: '40px 0', borderBottom: i < D.experience.length - 1 ? `1px solid ${C.line}` : 'none' }}>
-              <div style={{ paddingTop: '3px' }}>
-                <p style={{ fontFamily: C.B, fontSize: '13px', color: C.low, lineHeight: 1.7, marginBottom: '4px' }}>{e.period}</p>
-                <p style={{ fontFamily: C.B, fontSize: '13px', color: C.xlow }}>{e.location}</p>
+            <div key={i} style={{
+              display: 'grid',
+              gridTemplateColumns: mob ? '1fr' : 'minmax(100px,150px) 1fr',
+              gap: mob ? '4px' : '0 40px',
+              padding: mob ? '24px 0' : '40px 0',
+              borderBottom: i < D.experience.length - 1 ? `1px solid ${C.line}` : 'none',
+            }}>
+              <div style={{ paddingTop: '3px', marginBottom: mob ? '8px' : 0 }}>
+                <p style={{ fontFamily: C.B, fontSize: '12px', color: C.low, lineHeight: 1.7, marginBottom: '2px' }}>{e.period}</p>
+                <p style={{ fontFamily: C.B, fontSize: '12px', color: C.xlow }}>{e.location}</p>
               </div>
               <div>
-                <h3 style={{ fontFamily: C.F, fontWeight: 700, fontSize: '20px', color: C.white, letterSpacing: '-0.02em', marginBottom: '4px' }}>{e.role}</h3>
-                <p style={{ fontFamily: C.B, fontSize: '15px', fontWeight: 400, color: C.low, marginBottom: '20px' }}>{e.company}</p>
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <h3 style={{ fontFamily: C.F, fontWeight: 700, fontSize: mob ? '16px' : '20px', color: C.white, letterSpacing: '-0.02em', marginBottom: '4px' }}>{e.role}</h3>
+                <p style={{ fontFamily: C.B, fontSize: mob ? '13px' : '15px', fontWeight: 400, color: C.low, marginBottom: mob ? '12px' : '20px' }}>{e.company}</p>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: mob ? '8px' : '10px' }}>
                   {e.bullets.map((b, j) => (
-                    <li key={j} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-                      <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: C.xlow, flexShrink: 0, marginTop: '8px' }} />
-                      <span style={{ fontFamily: C.B, fontSize: '16px', fontWeight: 400, color: C.mid, lineHeight: 1.75 }}>{b}</span>
+                    <li key={j} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                      <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: C.xlow, flexShrink: 0, marginTop: '7px' }} />
+                      <span style={{ fontFamily: C.B, fontSize: mob ? '13px' : '16px', fontWeight: 400, color: C.mid, lineHeight: 1.75 }}>{b}</span>
                     </li>
                   ))}
                 </ul>
@@ -214,20 +263,24 @@ export default function ResumeScene({ onBack = null, embedded = false }) {
           ))}
         </Sect>
 
-        <Sect label="Projects">
+        <Sect label="Projects" mob={mob}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: C.line, borderRadius: '6px', overflow: 'hidden' }}>
-            {D.projects.map((p, i) => <ProjectRow key={i} p={p} />)}
+            {D.projects.map((p, i) => <ProjectRow key={i} p={p} mob={mob} />)}
           </div>
         </Sect>
 
-        <Sect label="Skills">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: '36px 28px' }}>
+        <Sect label="Skills" mob={mob}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: mob ? 'repeat(2, 1fr)' : 'repeat(auto-fit,minmax(150px,1fr))',
+            gap: mob ? '24px 16px' : '36px 28px',
+          }}>
             {Object.entries(D.skills).map(([cat, items]) => (
               <div key={cat}>
-                <p style={{ fontFamily: C.B, fontSize: '12px', fontWeight: 600, color: C.xlow, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '14px' }}>{cat}</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+                <p style={{ fontFamily: C.B, fontSize: '11px', fontWeight: 600, color: C.xlow, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '10px' }}>{cat}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
                   {items.map(s => (
-                    <span key={s} style={{ fontFamily: C.B, fontSize: '16px', fontWeight: 400, color: C.mid }}>{s}</span>
+                    <span key={s} style={{ fontFamily: C.B, fontSize: mob ? '13px' : '16px', fontWeight: 400, color: C.mid }}>{s}</span>
                   ))}
                 </div>
               </div>
@@ -235,12 +288,17 @@ export default function ResumeScene({ onBack = null, embedded = false }) {
           </div>
         </Sect>
 
-        <Sect label="Education">
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(100px,150px) 1fr', gap: '0 40px', padding: '32px 0' }}>
-            <p style={{ fontFamily: C.B, fontSize: '13px', color: C.low, paddingTop: '4px' }}>{D.education.year}</p>
+        <Sect label="Education" mob={mob}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: mob ? '1fr' : 'minmax(100px,150px) 1fr',
+            gap: mob ? '4px' : '0 40px',
+            padding: mob ? '20px 0' : '32px 0',
+          }}>
+            <p style={{ fontFamily: C.B, fontSize: '12px', color: C.low, paddingTop: '4px', marginBottom: mob ? '8px' : 0 }}>{D.education.year}</p>
             <div>
-              <h3 style={{ fontFamily: C.F, fontWeight: 700, fontSize: '18px', color: C.white, letterSpacing: '-0.02em', marginBottom: '5px' }}>{D.education.degree}</h3>
-              <p style={{ fontFamily: C.B, fontSize: '15px', color: C.low }}>{D.education.school}</p>
+              <h3 style={{ fontFamily: C.F, fontWeight: 700, fontSize: mob ? '15px' : '18px', color: C.white, letterSpacing: '-0.02em', marginBottom: '5px' }}>{D.education.degree}</h3>
+              <p style={{ fontFamily: C.B, fontSize: mob ? '13px' : '15px', color: C.low }}>{D.education.school}</p>
             </div>
           </div>
         </Sect>
@@ -250,11 +308,11 @@ export default function ResumeScene({ onBack = null, embedded = false }) {
   )
 }
 
-function Sect({ label, children }) {
+function Sect({ label, children, mob }) {
   return (
-    <section style={{ marginBottom: '80px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '36px' }}>
-        <h2 style={{ fontFamily: '"Inter",sans-serif', fontSize: '12px', fontWeight: 600, color: C.xlow, letterSpacing: '0.18em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+    <section style={{ marginBottom: mob ? '40px' : '80px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: mob ? '20px' : '36px' }}>
+        <h2 style={{ fontFamily: '"Inter",sans-serif', fontSize: '11px', fontWeight: 600, color: C.xlow, letterSpacing: '0.18em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
           {label}
         </h2>
         <div style={{ flex: 1, height: '1px', background: C.line }} />
@@ -264,25 +322,28 @@ function Sect({ label, children }) {
   )
 }
 
-function ProjectRow({ p }) {
+function ProjectRow({ p, mob }) {
   const [hov, setHov] = useState(false)
   return (
     <a href={p.link} target="_blank" rel="noreferrer"
       onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      onTouchStart={() => setHov(true)} onTouchEnd={() => setHov(false)}
       style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px',
-        padding: '26px 28px', background: hov ? C.surfaceHov : C.surface,
+        display: 'flex', alignItems: mob ? 'flex-start' : 'center',
+        justifyContent: 'space-between', gap: mob ? '12px' : '24px',
+        padding: mob ? '16px' : '26px 28px',
+        background: hov ? C.surfaceHov : C.surface,
         textDecoration: 'none', transition: 'background 0.2s ease', cursor: 'pointer',
       }}>
       <div style={{ flex: 1 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '14px', marginBottom: '8px' }}>
-          <h3 style={{ fontFamily: '"Syne",sans-serif', fontWeight: 700, fontSize: '16px', color: C.white, letterSpacing: '-0.01em' }}>{p.name}</h3>
-          <span style={{ fontFamily: '"Inter",sans-serif', fontSize: '13px', color: C.xlow }}>{p.year}</span>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
+          <h3 style={{ fontFamily: '"Syne",sans-serif', fontWeight: 700, fontSize: mob ? '14px' : '16px', color: C.white, letterSpacing: '-0.01em' }}>{p.name}</h3>
+          <span style={{ fontFamily: '"Inter",sans-serif', fontSize: '12px', color: C.xlow }}>{p.year}</span>
         </div>
-        <p style={{ fontFamily: '"Inter",sans-serif', fontSize: '15px', fontWeight: 400, color: C.mid, lineHeight: 1.7, marginBottom: '10px' }}>{p.desc}</p>
-        <p style={{ fontFamily: '"Inter",sans-serif', fontSize: '13px', color: C.xlow, letterSpacing: '0.03em' }}>{p.tech}</p>
+        <p style={{ fontFamily: '"Inter",sans-serif', fontSize: mob ? '12px' : '15px', fontWeight: 400, color: C.mid, lineHeight: 1.7, marginBottom: '8px' }}>{p.desc}</p>
+        <p style={{ fontFamily: '"Inter",sans-serif', fontSize: mob ? '11px' : '13px', color: C.xlow, letterSpacing: '0.03em' }}>{p.tech}</p>
       </div>
-      <span style={{ fontSize: '16px', color: C.low, opacity: hov ? 1 : 0, transform: hov ? 'translate(2px,-2px)' : 'translate(0,0)', transition: 'opacity 0.18s, transform 0.18s', flexShrink: 0 }}>↗</span>
+      <span style={{ fontSize: '16px', color: C.low, opacity: hov ? 1 : 0.4, flexShrink: 0, marginTop: mob ? '2px' : 0 }}>↗</span>
     </a>
   )
 }
@@ -297,6 +358,7 @@ function BackButton({ onClick }) {
         background: 'none', border: 'none', cursor: 'pointer',
         fontFamily: '"Inter",sans-serif', fontSize: '13px', fontWeight: 400,
         color: hov ? C.white : C.mid, padding: '8px 0', transition: 'color 0.18s',
+        touchAction: 'manipulation',
       }}>
       <span style={{ fontSize: '15px', display: 'inline-block', transform: hov ? 'translateX(-2px)' : 'translateX(0)', transition: 'transform 0.18s' }}>←</span>
       Back
@@ -304,22 +366,28 @@ function BackButton({ onClick }) {
   )
 }
 
-function DownloadBtn() {
+function DownloadBtn({ mob }) {
   const [hov, setHov] = useState(false)
   return (
     <a href={asset('/assets/pratham_purohit_resume.pdf')} download
       onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      onTouchStart={() => setHov(true)} onTouchEnd={() => setHov(false)}
       style={{
-        fontFamily: '"Inter",sans-serif', fontSize: '12px', fontWeight: 500,
+        fontFamily: '"Inter",sans-serif',
+        fontSize: mob ? '11px' : '12px',
+        fontWeight: 500,
         color: hov ? '#000' : C.mid,
         background: hov ? C.white : 'transparent',
         border: `1px solid ${hov ? C.white : C.lineMd}`,
-        borderRadius: '4px', padding: '7px 14px',
+        borderRadius: '4px',
+        padding: mob ? '6px 10px' : '7px 14px',
         cursor: 'pointer', letterSpacing: '0.01em',
         transition: 'all 0.2s ease',
         textDecoration: 'none', display: 'inline-block',
+        touchAction: 'manipulation',
+        whiteSpace: 'nowrap',
       }}>
-      Download PDF
+      {mob ? '↓ PDF' : 'Download PDF'}
     </a>
   )
 }

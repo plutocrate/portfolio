@@ -3,6 +3,7 @@ import ForestGlow from '../components/game/ForestGlow'
 import PlayerSprite from '../components/game/PlayerSprite'
 import DarkTileFloor from '../components/game/DarkTileFloor'
 import Fireflies from '../components/game/Fireflies'
+import MobileControls from '../components/game/MobileControls'
 import {
   GAME_WIDTH, PLAYER_MAX_SPEED, PLAYER_ACCEL, PLAYER_DECEL,
   PLAYER_SPRINT_SPEED, PLAYER_SPRINT_ACCEL,
@@ -12,6 +13,9 @@ import { getMovementDirection } from '../utils/keyboard'
 import { audioManager, RUN_VOLUME } from '../utils/audio'
 
 const GROUND_Y_RATIO = 0.72
+const isMobile = () =>
+  /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+  (typeof window !== 'undefined' && window.innerWidth <= 1024 && 'ontouchstart' in window)
 
 export default function EntryScene({ containerWidth, containerHeight, onReachEnd, startX = null, startFacing = 1 }) {
   const pressedKeys   = useRef(new Set())
@@ -125,7 +129,17 @@ export default function EntryScene({ containerWidth, containerHeight, onReachEnd
       width: containerWidth, height: containerHeight,
       background: '#000', overflow: 'hidden',
     }}>
-      <ForestGlow originX={0.92} originY={0.5} />
+      {/* WebGL glow — desktop only; replaced by CSS radial gradient on mobile */}
+      {!isMobile() && <ForestGlow originX={0.92} originY={0.5} />}
+      {isMobile() && (
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none',
+          background: `radial-gradient(ellipse 55% 70% at 92% 50%,
+            rgba(44,255,120,0.18) 0%,
+            rgba(20,180,80,0.10) 35%,
+            rgba(0,30,10,0.0) 70%)`,
+        }} />
+      )}
 
       <DarkTileFloor
         containerWidth={containerWidth}
@@ -134,13 +148,15 @@ export default function EntryScene({ containerWidth, containerHeight, onReachEnd
         lightX={containerWidth * 0.92}
       />
 
-      {/* Fireflies — only in this scene */}
-      <Fireflies
-        containerWidth={containerWidth}
-        containerHeight={containerHeight}
-        groundY={groundY}
-        lightX={containerWidth * 0.92}
-      />
+      {/* Fireflies — desktop only; too GPU-heavy for mobile */}
+      {!isMobile() && (
+        <Fireflies
+          containerWidth={containerWidth}
+          containerHeight={containerHeight}
+          groundY={groundY}
+          lightX={containerWidth * 0.92}
+        />
+      )}
 
       {/* Darkness veil */}
       <div style={{
@@ -170,6 +186,15 @@ export default function EntryScene({ containerWidth, containerHeight, onReachEnd
         boxShadow: '0 0 10px 2px rgba(68,255,136,0.22)',
         pointerEvents: 'none',
       }} />
+
+      {/* Mobile touch zones */}
+      <MobileControls
+        pressedKeys={pressedKeys}
+        visible={isMobile()}
+        containerWidth={containerWidth}
+        containerHeight={containerHeight}
+      />
     </div>
+
   )
 }

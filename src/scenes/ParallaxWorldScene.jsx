@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import PlayerSprite from '../components/game/PlayerSprite'
 import NpcSprite from '../components/game/NpcSprite'
+import MobileControls from '../components/game/MobileControls'
 import { useGame } from '../hooks/useGameState'
 import {
   SCENES, GAME_WIDTH,
@@ -13,9 +14,12 @@ import { audioManager, RUN_VOLUME } from '../utils/audio'
 
 const GROUND_Y_RATIO = 0.80
 const TILE_RENDER    = 72
-// World is 2× screen width — camera scrolls, player anchors at 35% once scrolling
 const WORLD_MULT     = 3.0
-const PLAYER_ANCHOR  = 0.35  // screen fraction where camera starts scrolling
+const PLAYER_ANCHOR  = 0.35
+
+const isMobile = () =>
+  /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+  (typeof window !== 'undefined' && window.innerWidth <= 1024 && 'ontouchstart' in window)
 
 export default function ParallaxWorldScene({
   containerWidth,
@@ -385,7 +389,7 @@ export default function ParallaxWorldScene({
                 fontFamily: '"Cormorant Garamond", "Playfair Display", Georgia, serif',
                 fontWeight: 300,
                 fontStyle: 'italic',
-                fontSize: 'clamp(56px, 8vw, 100px)',
+                fontSize: 'clamp(28px, 6vw, 100px)',
                 letterSpacing: '0.2em',
                 color: '#0f0f28',
                 textShadow: '0 1px 2px rgba(255,255,255,0.6), 0 4px 16px rgba(0,0,0,0.12)',
@@ -400,7 +404,7 @@ export default function ParallaxWorldScene({
                 fontFamily: '"Cormorant Garamond", Georgia, serif',
                 fontWeight: 600,
                 fontStyle: 'italic',
-                fontSize: 'clamp(15px, 1.9vw, 22px)',
+                fontSize: 'clamp(10px, 1.6vw, 22px)',
                 letterSpacing: '0.28em',
                 textTransform: 'uppercase',
                 color: '#0f0f28',
@@ -454,9 +458,9 @@ export default function ParallaxWorldScene({
 
       {/* Player dialogue — shown when near Barbarian */}
       {playerDialogue && (() => {
-        const { SPRITE_SCALE: sc } = { SPRITE_SCALE }
-        const bubbleX = screenX + 60  // offset right of player centre
-        const bubbleY = groundY - 200  // above player head
+        const mobile = isMobile()
+        const bubbleX = screenX + 60
+        const bubbleY = groundY - (mobile ? 140 : 200)
         return (
           <div style={{
             position:      'absolute',
@@ -475,8 +479,8 @@ export default function ParallaxWorldScene({
               WebkitBackdropFilter: 'blur(28px) saturate(2.2) brightness(1.15)',
               background:           'rgba(255,255,255,0.60)',
               border:               '2px solid rgba(255,255,255,0.92)',
-              borderRadius:         '18px',
-              padding:              '14px 26px 12px',
+              borderRadius:         '14px',
+              padding:              mobile ? '9px 16px 8px' : '14px 26px 12px',
               boxShadow:            '0 8px 40px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.15), inset 0 1.5px 0 rgba(255,255,255,0.95)',
               position:             'relative',
               display:              'inline-block',
@@ -485,7 +489,7 @@ export default function ParallaxWorldScene({
                 fontFamily:    '"Cormorant Garamond", "Palatino Linotype", Georgia, serif',
                 fontStyle:     'italic',
                 fontWeight:    700,
-                fontSize:      '22px',
+                fontSize:      mobile ? '14px' : '22px',
                 lineHeight:    1,
                 letterSpacing: '0.015em',
                 color:         '#0d0d1a',
@@ -512,6 +516,14 @@ export default function ParallaxWorldScene({
         facing={playerFacing}
         isMoving={isMoving} isSprinting={isSprinting} velocity={velocity}
         scale={SPRITE_SCALE} greenTint={0} darkness={0}
+      />
+
+      {/* Mobile touch zones */}
+      <MobileControls
+        pressedKeys={pressedKeys}
+        visible={isMobile()}
+        containerWidth={containerWidth}
+        containerHeight={containerHeight}
       />
     </div>
   )

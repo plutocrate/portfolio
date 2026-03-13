@@ -1,6 +1,13 @@
 import { useEffect, useRef } from 'react'
 import { asset } from '../../utils/constants'
 
+const isMobile = () =>
+  /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+  (typeof window !== 'undefined' && window.innerWidth <= 1024 && 'ontouchstart' in window)
+
+// Scale sprite down on mobile proportionally to screen width
+const mobileScaleFactor = () => isMobile() ? Math.min(1, window.innerWidth / 900) : 1
+
 // ── Normal run (14 frames) ─────────────────────────────────────────────────────
 const RUN_FRAMES    = 14
 const RUN_SRC_X     = 55
@@ -44,6 +51,9 @@ export default function PlayerSprite({
   greenTint   = 0,
   darkness    = 0.7,
 }) {
+  // Reduce sprite size dynamically on mobile
+  const effectiveScale = scale * mobileScaleFactor()
+
   const canvasRef        = useRef(null)
   const stateRef         = useRef({ facing, isMoving, isSprinting, velocity, greenTint, darkness })
   const runFramesRef     = useRef([])
@@ -81,8 +91,8 @@ export default function PlayerSprite({
     if (!canvas) return
     const ctx = canvas.getContext('2d')
 
-    const maxW = Math.round(Math.max(RUN_SRC_W, BIG_SRC_W, IDLE_SRC_W) * scale)
-    const maxH = Math.round(Math.max(RUN_SRC_H, BIG_SRC_H, IDLE_SRC_H) * scale)
+    const maxW = Math.round(Math.max(RUN_SRC_W, BIG_SRC_W, IDLE_SRC_W) * effectiveScale)
+    const maxH = Math.round(Math.max(RUN_SRC_H, BIG_SRC_H, IDLE_SRC_H) * effectiveScale)
     canvas.width  = maxW
     canvas.height = maxH
 
@@ -138,8 +148,8 @@ export default function PlayerSprite({
         rafRef.current = requestAnimationFrame(draw); return
       }
 
-      const drawW = Math.round(SRC_W * scale)
-      const drawH = Math.round(SRC_H * scale)
+      const drawW = Math.round(SRC_W * effectiveScale)
+      const drawH = Math.round(SRC_H * effectiveScale)
       const offX  = Math.round((maxW - drawW) / 2)
       const offY  = Math.round((maxH - drawH) / 2)
 
@@ -202,14 +212,14 @@ export default function PlayerSprite({
 
     rafRef.current = requestAnimationFrame(draw)
     return () => cancelAnimationFrame(rafRef.current)
-  }, [scale])
+  }, [effectiveScale])
 
-  const maxW = Math.round(Math.max(RUN_SRC_W, BIG_SRC_W, IDLE_SRC_W) * scale)
-  const maxH = Math.round(Math.max(RUN_SRC_H, BIG_SRC_H, IDLE_SRC_H) * scale)
+  const maxW = Math.round(Math.max(RUN_SRC_W, BIG_SRC_W, IDLE_SRC_W) * effectiveScale)
+  const maxH = Math.round(Math.max(RUN_SRC_H, BIG_SRC_H, IDLE_SRC_H) * effectiveScale)
 
   const activeSrcH     = !isMoving ? IDLE_SRC_H : isSprinting ? BIG_SRC_H : RUN_SRC_H
   const activeFootFrac = !isMoving ? IDLE_FOOT_FRAC : isSprinting ? BIG_FOOT_FRAC : RUN_FOOT_FRAC
-  const drawH          = Math.round(activeSrcH * scale)
+  const drawH          = Math.round(activeSrcH * effectiveScale)
   const offY           = Math.round((maxH - drawH) / 2)
   const footPx         = offY + Math.round(drawH * activeFootFrac)
 

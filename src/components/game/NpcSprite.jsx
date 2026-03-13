@@ -3,17 +3,21 @@ import { asset } from '../../utils/constants'
 
 const NPC_FPS = 12
 
+const isMobile = () =>
+  /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+  (typeof window !== 'undefined' && window.innerWidth <= 1024 && 'ontouchstart' in window)
+
+// Mobile scale factor — shrink NPCs on small screens
+const MOB_SCALE = () => isMobile() ? Math.min(1, window.innerWidth / 900) : 1
+
 // ── Character configs ──────────────────────────────────────────────────────
-// displayH  = final rendered height in CSS px (character body only)
-// All position maths use DISPLAY dimensions, not canvas dimensions.
-// For large NPCs we keep canvas at srcSize and use CSS scale — cheaper GPU path.
 const CHARS = {
   romeo: {
     frameCount: 7, frameStart: 1, namePad: (i) => `${i}`,
     dir:     asset('/assets/sprites/npc1_romeo'),
     srcSize: 2048,
     charH: 736, footYSrc: 1785, headYSrc: 1049, cxSrc: 1026,
-    displayH: 140,   // desired character height on screen
+    displayH: 140,
   },
   juliet: {
     frameCount: 8, frameStart: 0, namePad: (i) => `${i}`,
@@ -27,21 +31,23 @@ const CHARS = {
     dir:     asset('/assets/sprites/npc3_barbarian'),
     srcSize: 512,
     charH: 331, footYSrc: 458, headYSrc: 127, cxSrc: 232,
-    displayH: 480,   // 3× original ~160px
+    displayH: 480,
   },
 }
 
 // Derive layout in DISPLAY-pixel space
-function makeLayout(cfg) {
+function makeLayout(cfg, mobScale = 1) {
   const { srcSize, charH, footYSrc, headYSrc, cxSrc, displayH } = cfg
-  const scale          = displayH / charH                           // char scale
-  const displayCanvas  = Math.round(srcSize * scale)               // full canvas in display px
-  const footFromBottom = Math.round((srcSize - footYSrc) * scale)  // gap below feet (display px)
-  const headInCanvas   = Math.round(headYSrc * scale)              // head Y from canvas top (display px)
-  const cxInCanvas     = Math.round(cxSrc    * scale)              // char centre X (display px)
+  const scaledH        = Math.round(displayH * mobScale)
+  const scale          = scaledH / charH
+  const displayCanvas  = Math.round(srcSize * scale)
+  const footFromBottom = Math.round((srcSize - footYSrc) * scale)
+  const headInCanvas   = Math.round(headYSrc * scale)
+  const cxInCanvas     = Math.round(cxSrc    * scale)
   return { displayCanvas, footFromBottom, headInCanvas, cxInCanvas }
 }
 
+// Static layouts (desktop). Mobile layouts computed per-render below.
 const LAYOUTS = Object.fromEntries(Object.entries(CHARS).map(([k,v]) => [k, makeLayout(v)]))
 
 const DIALOGUE_MS  = 8000
@@ -55,8 +61,9 @@ export default function NpcSprite({
   isMoving      = true,
   playerScreenX = null,
 }) {
-  const cfg = CHARS[character]
-  const lay = LAYOUTS[character]
+  const cfg     = CHARS[character]
+  const mobScale = MOB_SCALE()
+  const lay     = makeLayout(cfg, mobScale)
 
   const canvasRef    = useRef(null)
   const framesRef    = useRef([])
@@ -172,8 +179,8 @@ export default function NpcSprite({
             WebkitBackdropFilter: 'blur(28px) saturate(2.2) brightness(1.15)',
             background:           'rgba(255,255,255,0.60)',
             border:               '2px solid rgba(255,255,255,0.92)',
-            borderRadius:         '18px',
-            padding:              '14px 26px 12px',
+            borderRadius:         isMobile() ? '12px' : '18px',
+            padding:              isMobile() ? '8px 14px 7px' : '14px 26px 12px',
             boxShadow:            '0 8px 40px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.15), inset 0 1.5px 0 rgba(255,255,255,0.95)',
             position:             'relative',
             display:              'inline-block',
@@ -182,11 +189,11 @@ export default function NpcSprite({
               fontFamily:    '"Cormorant Garamond", "Palatino Linotype", Georgia, serif',
               fontStyle:     'italic',
               fontWeight:    700,
-              fontSize:      '22px',
+              fontSize:      isMobile() ? '13px' : '22px',
               lineHeight:    1,
               letterSpacing: '0.015em',
               color:         '#0d0d1a',
-              whiteSpace:    'nowrap',   // enforce no wrap on text too
+              whiteSpace:    'nowrap',
             }}>
               {dialogue}
             </div>

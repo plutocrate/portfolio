@@ -13,6 +13,20 @@ html, body, #root {
   height: 100%;
   overflow: hidden;
   background: #000;
+  /* Prevent browser gestures interfering with game touch */
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Allow scrolling only on elements that need it */
+.allow-scroll {
+  touch-action: pan-y;
+  overflow-y: auto;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 canvas { display: block; }

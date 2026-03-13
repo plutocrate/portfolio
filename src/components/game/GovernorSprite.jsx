@@ -1,16 +1,26 @@
 import { useEffect, useRef } from 'react'
 import { asset } from '../../utils/constants'
 
+const isMobile = () =>
+  /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+  (typeof window !== 'undefined' && window.innerWidth <= 1024 && 'ontouchstart' in window)
+
 const FPS = 8
 const SRC = 512
 // Layout (renderH=150, charH=453)
-const RENDER_H       = 150
+const RENDER_H_BASE  = 150
 const CHAR_H         = 453
-const SCALE          = RENDER_H / CHAR_H          // 0.3311
-const CANVAS_PX      = Math.round(SRC * SCALE)    // 170
-const FOOT_FROM_BOT  = Math.round((SRC - 505) * SCALE)  // 2
-const HEAD_IN_CANVAS = Math.round(52 * SCALE)     // 17
-const CX_IN_CANVAS   = Math.round(269 * SCALE)    // 89
+// Dynamically scale on mobile
+const getScale       = () => {
+  const rh = isMobile() ? Math.round(RENDER_H_BASE * Math.min(1, window.innerWidth / 900)) : RENDER_H_BASE
+  return rh / CHAR_H
+}
+const RENDER_H       = isMobile() ? Math.round(RENDER_H_BASE * Math.min(1, window.innerWidth / 900)) : RENDER_H_BASE
+const SCALE          = RENDER_H / CHAR_H
+const CANVAS_PX      = Math.round(SRC * SCALE)
+const FOOT_FROM_BOT  = Math.round((SRC - 505) * SCALE)
+const HEAD_IN_CANVAS = Math.round(52 * SCALE)
+const CX_IN_CANVAS   = Math.round(269 * SCALE)
 
 export const GOV_CANVAS_PX      = CANVAS_PX
 export const GOV_FOOT_FROM_BOT  = FOOT_FROM_BOT
