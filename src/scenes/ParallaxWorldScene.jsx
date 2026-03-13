@@ -419,7 +419,7 @@ export default function ParallaxWorldScene({
       {npcScreenPositions[0] && (
         <NpcSprite
           character="romeo"
-          dialogue="juliet, i can't seem to reach you"
+          dialogue="juliet, i can't... i can't move towards you. [ROBOTIC VOICE] gO RiGht, RIGHT"
           x={npcScreenPositions[0].x}
           y={groundY}
           facing={npcScreenPositions[0].facing}
@@ -431,7 +431,7 @@ export default function ParallaxWorldScene({
       {npcScreenPositions[1] && (
         <NpcSprite
           character="barbarian"
-          dialogue="arghh, i don't remember how i got here... *spits*"
+          dialogue="arghh, i don't remember how i got here... spits, and why am I glitching...."
           x={npcScreenPositions[1].x}
           y={groundY}
           facing={npcScreenPositions[1].facing}
