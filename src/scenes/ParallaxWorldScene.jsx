@@ -491,7 +491,7 @@ export default function ParallaxWorldScene({
                 color:         '#0d0d1a',
                 whiteSpace:    'nowrap',
               }}>
-                is this even a portfolio site? now i don&apos;t remember why i&apos;m here
+                is this even a portfolio site?
               </div>
               <div style={{
                 position: 'absolute', bottom: '-12px', left: '50%',
