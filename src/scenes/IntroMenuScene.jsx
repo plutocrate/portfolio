@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react'
+import emailjs from '@emailjs/browser'
 
 const isMobile = () =>
   /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
   (typeof window !== 'undefined' && window.innerWidth <= 1024 && 'ontouchstart' in window)
 
+const FONT = '"Courier New", monospace'
+
 export default function IntroMenuScene({ onSelect }) {
   const [visible,    setVisible]    = useState(false)
   const [selected,   setSelected]   = useState(null)
   const [isPortrait, setIsPortrait] = useState(() => window.innerHeight > window.innerWidth)
+  const [showEmail,  setShowEmail]  = useState(false)
   const mobile = isMobile()
 
   useEffect(() => {
@@ -25,23 +29,19 @@ export default function IntroMenuScene({ onSelect }) {
     }
   }, [])
 
-  // Normal mode is locked on mobile portrait
   const normalLocked = mobile && isPortrait
 
   const choose = (mode) => {
     if (selected) return
     if (mode === 'normal' && normalLocked) return
     setSelected(mode)
-
-    // Request fullscreen synchronously in click handler
     const el = document.documentElement
     try {
-      if (el.requestFullscreen)           el.requestFullscreen()
+      if (el.requestFullscreen)            el.requestFullscreen()
       else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen()
       else if (el.mozRequestFullScreen)    el.mozRequestFullScreen()
       else if (el.msRequestFullscreen)     el.msRequestFullscreen()
     } catch (_) {}
-
     setTimeout(() => onSelect(mode), 480)
   }
 
@@ -77,7 +77,6 @@ export default function IntroMenuScene({ onSelect }) {
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
-          {/* Resume Mode — always available */}
           <MenuButton
             label="Resume Mode"
             sub="For recruiters — single-page overview"
@@ -86,8 +85,6 @@ export default function IntroMenuScene({ onSelect }) {
             locked={false}
             onClick={() => choose('resume')}
           />
-
-          {/* Normal Mode — locked on mobile portrait */}
           <MenuButton
             label="Normal Mode"
             sub="For humans — explore the world"
@@ -96,9 +93,14 @@ export default function IntroMenuScene({ onSelect }) {
             locked={normalLocked}
             onClick={() => choose('normal')}
           />
+
+          {/* Drop a message button */}
+          <DropMessageButton
+            open={showEmail}
+            onToggle={() => setShowEmail(v => !v)}
+          />
         </div>
 
-        {/* Mobile disclaimer — always shown on mobile */}
         {mobile && (
           <div style={{
             marginTop: '20px',
@@ -108,7 +110,6 @@ export default function IntroMenuScene({ onSelect }) {
             borderRadius: '6px',
             width: '100%',
           }}>
-            {/* Landscape requirement */}
             {normalLocked && (
               <p style={{
                 fontFamily: '"Inter", sans-serif', fontSize: '12px', fontWeight: 400,
@@ -120,7 +121,6 @@ export default function IntroMenuScene({ onSelect }) {
                 Rotate to landscape to unlock Normal Mode
               </p>
             )}
-            {/* Desktop recommendation — always */}
             <p style={{
               fontFamily: '"Inter", sans-serif', fontSize: '11px', fontWeight: 300,
               color: 'rgba(255,255,255,0.35)',
@@ -138,6 +138,146 @@ export default function IntroMenuScene({ onSelect }) {
           Headphones recommended
         </p>
       </div>
+    </div>
+  )
+}
+
+// ── Drop a message — inline expandable form ───────────────────────────────
+function DropMessageButton({ open, onToggle }) {
+  const [hover,     setHover]     = useState(false)
+  const [data,      setData]      = useState({ name: '', email: '', message: '' })
+  const [sending,   setSending]   = useState(false)
+  const [sent,      setSent]      = useState(false)
+  const [error,     setError]     = useState(false)
+  const lit = hover && !open
+
+  const send = async () => {
+    if (!data.name || !data.email || !data.message) return
+    setSending(true); setError(false)
+    try {
+      await emailjs.send(
+        'service_06d6y58',
+        'template_kfcibfh',
+        { from_name: data.name, from_email: data.email, message: data.message, to_email: 'prathampurohitonline@outlook.com' },
+        'HgsszHkvHyhtMtI--'
+      )
+      setSent(true)
+    } catch (_) { setError(true) }
+    setSending(false)
+  }
+
+  const inputStyle = {
+    background: 'rgba(255,255,255,0.07)',
+    border: '1px solid rgba(255,255,255,0.18)',
+    borderRadius: '6px',
+    padding: '10px 14px',
+    color: '#ffffff',
+    fontSize: '14px',
+    fontFamily: FONT,
+    outline: 'none',
+    width: '100%',
+    boxSizing: 'border-box',
+    transition: 'border-color 0.15s',
+  }
+
+  return (
+    <div style={{ width: '100%' }}>
+      {/* Toggle button — same style as MenuButton but index is "✉" */}
+      <button
+        onClick={onToggle}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+        style={{
+          position: 'relative', background: 'transparent', borderRadius: '2px',
+          padding: '22px 28px', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', textAlign: 'left',
+          width: '100%', overflow: 'hidden',
+          border: `1px solid ${open ? 'rgba(255,255,255,0.35)' : lit ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.12)'}`,
+          transition: 'border-color 0.3s ease',
+        }}
+      >
+        <span style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.06)', transformOrigin: 'left center', transform: (lit || open) ? 'scaleX(1)' : 'scaleX(0)', transition: 'transform 0.35s cubic-bezier(0.16,1,0.3,1)', pointerEvents: 'none' }} />
+        <span style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '2px', background: 'rgba(100,255,160,0.9)', transform: (lit || open) ? 'scaleY(1)' : 'scaleY(0)', transformOrigin: 'top center', transition: 'transform 0.3s cubic-bezier(0.16,1,0.3,1)' }} />
+        <span style={{ fontFamily: '"Syne", sans-serif', fontWeight: 700, fontSize: '12px', color: (lit || open) ? 'rgba(100,255,160,0.9)' : 'rgba(255,255,255,0.20)', letterSpacing: '0.05em', marginRight: '24px', transition: 'color 0.25s ease', flexShrink: 0, position: 'relative' }}>
+          03
+        </span>
+        <div style={{ flex: 1, position: 'relative' }}>
+          <div style={{ fontFamily: '"Syne", sans-serif', fontWeight: 700, fontSize: 'clamp(15px, 4vw, 22px)', color: '#ffffff', marginBottom: '5px', letterSpacing: '-0.01em' }}>
+            Drop a Message
+          </div>
+          <div style={{ fontFamily: '"Inter", sans-serif', fontWeight: 400, fontSize: '12px', color: (lit || open) ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.35)', letterSpacing: '0.01em', transition: 'color 0.25s ease' }}>
+            Reach out directly — no game needed
+          </div>
+        </div>
+        <span style={{ fontFamily: '"Syne", sans-serif', fontSize: '18px', color: 'rgba(100,255,160,0.9)', opacity: (lit || open) ? 1 : 0, transform: open ? 'rotate(90deg)' : 'translateX(0)', transition: 'opacity 0.25s ease, transform 0.3s ease', marginLeft: '16px', position: 'relative' }}>→</span>
+      </button>
+
+      {/* Expandable form */}
+      {open && (
+        <div style={{
+          padding: '20px 28px 24px',
+          border: '1px solid rgba(255,255,255,0.12)',
+          borderTop: 'none',
+          borderRadius: '0 0 2px 2px',
+          display: 'flex', flexDirection: 'column', gap: '10px',
+          background: 'rgba(0,0,0,0.3)',
+        }}>
+          {sent ? (
+            <p style={{ fontFamily: FONT, fontSize: '15px', color: 'rgba(100,255,160,0.9)', textAlign: 'center', padding: '12px 0' }}>
+              ✓ message sent — i'll get back to you
+            </p>
+          ) : (
+            <>
+              <input
+                placeholder="your name" value={data.name}
+                onChange={e => setData(p => ({ ...p, name: e.target.value }))}
+                style={inputStyle}
+                onFocus={e => e.target.style.borderColor='rgba(255,255,255,0.45)'}
+                onBlur={e  => e.target.style.borderColor='rgba(255,255,255,0.18)'}
+              />
+              <input
+                placeholder="your email" type="email" value={data.email}
+                onChange={e => setData(p => ({ ...p, email: e.target.value }))}
+                style={inputStyle}
+                onFocus={e => e.target.style.borderColor='rgba(255,255,255,0.45)'}
+                onBlur={e  => e.target.style.borderColor='rgba(255,255,255,0.18)'}
+              />
+              <textarea
+                placeholder="your message..." value={data.message}
+                onChange={e => setData(p => ({ ...p, message: e.target.value }))}
+                rows={4}
+                style={{ ...inputStyle, resize: 'vertical', minHeight: '90px' }}
+                onFocus={e => e.target.style.borderColor='rgba(255,255,255,0.45)'}
+                onBlur={e  => e.target.style.borderColor='rgba(255,255,255,0.18)'}
+              />
+              {error && (
+                <p style={{ fontFamily: FONT, fontSize: '13px', color: 'rgba(255,100,100,0.85)', margin: 0 }}>
+                  hmm... something broke. try again?
+                </p>
+              )}
+              <button
+                onClick={send}
+                disabled={sending || !data.name || !data.email || !data.message}
+                style={{
+                  marginTop: '4px',
+                  background: (data.name && data.email && data.message && !sending) ? 'rgba(100,255,160,0.15)' : 'rgba(255,255,255,0.05)',
+                  border: `1px solid ${(data.name && data.email && data.message && !sending) ? 'rgba(100,255,160,0.5)' : 'rgba(255,255,255,0.12)'}`,
+                  borderRadius: '4px',
+                  padding: '12px',
+                  color: (data.name && data.email && data.message && !sending) ? 'rgba(100,255,160,0.95)' : 'rgba(255,255,255,0.3)',
+                  fontFamily: FONT,
+                  fontSize: '14px',
+                  cursor: (data.name && data.email && data.message && !sending) ? 'pointer' : 'default',
+                  transition: 'all 0.2s ease',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                {sending ? 'sending...' : 'send message →'}
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   )
 }
