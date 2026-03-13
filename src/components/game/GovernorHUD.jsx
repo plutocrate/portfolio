@@ -112,7 +112,7 @@ export default function GovernorHUD({ onClose, onResumeOpen, onAnimState, resume
     try {
       await emailjs.send(
         'service_06d6y58',
-        'pq490pc',
+        'template_kfcibfh',
         { from_name: emailData.name, from_email: emailData.email, message: emailData.message, to_email: 'prathampurohitonline@outlook.com' },
         'HgsszHkvHyhtMtI--'
       )
