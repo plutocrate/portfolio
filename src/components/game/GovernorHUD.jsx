@@ -118,7 +118,7 @@ export default function GovernorHUD({ onClose, onResumeOpen, onAnimState, resume
       )
       setSent(true); setView('menu')
       setDialogue(DIALOGUE.emailSent); onAnimState('happy')
-    } catch { setDialogue(DIALOGUE.emailErr) }
+    } catch (err) { console.error("EmailJS error:", err); setDialogue(DIALOGUE.emailErr) }
     setSending(false)
   }
 
