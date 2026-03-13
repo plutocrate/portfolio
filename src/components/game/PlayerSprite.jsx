@@ -5,8 +5,13 @@ const isMobile = () =>
   /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
   (typeof window !== 'undefined' && window.innerWidth <= 1024 && 'ontouchstart' in window)
 
-// Scale sprite down on mobile proportionally to screen width
-const mobileScaleFactor = () => isMobile() ? Math.min(1, window.innerWidth / 900) : 1
+// Scale sprite down on mobile proportionally to both screen dimensions
+const mobileScaleFactor = () => {
+  if (!isMobile()) return 1
+  const wScale = window.innerWidth  / 1280
+  const hScale = window.innerHeight / 720
+  return Math.min(wScale, hScale, 1)
+}
 
 // ── Normal run (14 frames) ─────────────────────────────────────────────────────
 const RUN_FRAMES    = 14

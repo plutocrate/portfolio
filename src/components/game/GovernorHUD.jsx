@@ -2,22 +2,22 @@ import { useState } from 'react'
 import emailjs from '@emailjs/browser'
 
 const DIALOGUE = {
-  intro:      "feels good to see someone in here, really.... really. i'm governer, the people here call me governer, my real name's... my real name.... i don't remember, i created this world btw. how may i help?",
+  intro:      "I am still building this world, the folks you saw outside they are my creation. I know their brains are a little messed up, I will write a 'purpose' algorithm for them, later. Anyways, I work for Pratham, he rented me this place. What can I do for you?",
   emailForm:  "and your message is.....",
-  emailSent:  "well that was easy.",
-  resumeBack: "wasn't i right about him? anything more at your service",
+  emailSent:  "And.... sent.",
+  resumeBack: "wasn't I right about him? anything more at your service",
   emailErr:   "hmm... something broke. try again?",
 }
 
 const FONT = '"Courier New", monospace'
 
 const inputStyle = {
-  background:   'rgba(255,255,255,0.04)',
-  border:       '1px solid rgba(255,255,255,0.15)',
+  background:   'rgba(0,0,0,0.06)',
+  border:       '1px solid rgba(0,0,0,0.15)',
   borderRadius: 6,
   padding:      '12px 16px',
-  color:        '#ffffff',
-  fontSize:     15,
+  color:        '#000000',
+  fontSize:     17, fontWeight: 700,
   fontFamily:   FONT,
   outline:      'none',
   width:        '100%',
@@ -39,32 +39,31 @@ function OptionButton({ label, onClick, disabled }) {
         alignItems:   'center',
         gap:          12,
         width:        '100%',
-        background:   active ? 'rgba(255,255,255,0.06)' : 'transparent',
-        border:       `1px solid rgba(255,255,255,${disabled ? '0.08' : active ? '0.28' : '0.14'})`,
+        background:   active ? 'rgba(0,0,0,0.07)' : 'transparent',
+        border:       `1px solid rgba(0,0,0,${disabled ? '0.08' : active ? '0.28' : '0.14'})`,
         borderRadius: 8,
         padding:      '14px 20px',
         cursor:       disabled ? 'default' : 'pointer',
         transition:   'all 0.15s ease',
         textAlign:    'left',
-        whiteSpace:   'nowrap',
         overflow:     'hidden',
         minWidth:     0,
       }}
     >
       <span style={{
-        fontFamily: FONT, fontSize: 13, flexShrink: 0,
-        color:      disabled ? 'rgba(255,255,255,0.20)' : 'rgba(255,255,255,0.40)',
+        fontFamily: FONT, fontSize: 15, fontWeight: 700, flexShrink: 0,
+        color:      disabled ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.40)',
         transform:  active ? 'translateX(3px)' : 'none',
         transition: 'transform 0.15s ease',
       }}>›</span>
       <span style={{
-        fontFamily:   FONT, fontSize: 15, flex: 1,
-        color:        disabled ? 'rgba(255,255,255,0.25)' : '#ffffff',
+        fontFamily:   FONT, fontSize: 17, fontWeight: 700, flex: 1,
+        color:        disabled ? 'rgba(0,0,0,0.35)' : '#000000',
         overflow:     'hidden',
         textOverflow: 'ellipsis',
         whiteSpace:   'nowrap',
       }}>{label}</span>
-      {disabled && <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', flexShrink: 0 }}>✓</span>}
+      {disabled && <span style={{ fontSize: 12, color: 'rgba(0,0,0,0.25)', flexShrink: 0 }}>✓</span>}
     </button>
   )
 }
@@ -84,12 +83,12 @@ function SendButton({ onClick, disabled, sending }) {
         alignItems:     'center',
         justifyContent: 'center',
         gap:            8,
-        background:     active ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.06)',
-        border:         `1px solid rgba(255,255,255,${disabled ? '0.10' : '0.28'})`,
+        background:     active ? 'rgba(0,0,0,0.10)' : 'rgba(0,0,0,0.05)',
+        border:         `1px solid rgba(0,0,0,${disabled ? '0.10' : '0.28'})`,
         borderRadius:   8,
         padding:        '14px 20px',
-        color:          disabled ? 'rgba(255,255,255,0.30)' : '#ffffff',
-        fontSize:       15,
+        color:          disabled ? 'rgba(0,0,0,0.35)' : '#000000',
+        fontSize:       17, fontWeight: 700,
         fontFamily:     FONT,
         cursor:         disabled ? 'default' : 'pointer',
         transition:     'all 0.15s ease',
@@ -126,55 +125,57 @@ export default function GovernorHUD({ onClose, onResumeOpen, onAnimState, resume
 
   return (
     <>
-      <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.65)', zIndex:99 }} onClick={onClose} />
+      <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.35)', zIndex:99 }} onClick={onClose} />
 
       <div
         onClick={e => e.stopPropagation()}
         style={{
           position:'fixed', top:'50%', left:'50%', transform:'translate(-50%,-50%)',
           width:W, maxHeight:'82vh', overflowY:'auto',
-          background:'#0a0f0a',
-          border:'1px solid rgba(255,255,255,0.12)',
-          borderRadius:12,
-          boxShadow:'0 32px 80px rgba(0,0,0,0.9)',
+          backdropFilter:       'blur(28px) saturate(2.2) brightness(1.15)',
+          WebkitBackdropFilter: 'blur(28px) saturate(2.2) brightness(1.15)',
+          background:    'rgba(255,255,255,0.92)',
+          border:        '2px solid rgba(255,255,255,0.92)',
+          borderRadius:  12,
+          boxShadow:     '0 8px 40px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.15), inset 0 1.5px 0 rgba(255,255,255,0.95)',
           zIndex:100,
           display:'flex', flexDirection:'column',
-          scrollbarWidth:'thin', scrollbarColor:'rgba(255,255,255,0.1) transparent',
+          scrollbarWidth:'thin', scrollbarColor:'rgba(0,0,0,0.1) transparent',
         }}
       >
         {/* Header */}
         <div style={{
           display:'flex', alignItems:'center', justifyContent:'space-between',
           padding:'16px 24px',
-          borderBottom:'1px solid rgba(255,255,255,0.08)',
+          borderBottom:'1px solid rgba(0,0,0,0.08)',
           flexShrink:0,
         }}>
           <span style={{
-            fontFamily:FONT, fontSize:11,
-            color:'rgba(255,255,255,0.30)',
+            fontFamily:FONT, fontSize:12, fontWeight: 700,
+            color:'rgba(0,0,0,0.35)',
             letterSpacing:'0.16em', textTransform:'uppercase',
           }}>Governor</span>
           <button onClick={onClose} style={{
             background:'transparent', border:'none',
-            color:'rgba(255,255,255,0.30)', cursor:'pointer',
+            color:'rgba(0,0,0,0.35)', cursor:'pointer',
             fontSize:18, lineHeight:1, padding:'2px 4px', transition:'color 0.15s',
           }}
-            onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,0.70)'}
-            onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.30)'}
+            onMouseEnter={e => e.currentTarget.style.color='rgba(0,0,0,0.75)'}
+            onMouseLeave={e => e.currentTarget.style.color='rgba(0,0,0,0.35)'}
           >✕</button>
         </div>
 
         {/* Dialogue */}
         <div style={{
           padding:'28px 28px 24px',
-          fontFamily:FONT, fontSize:17, lineHeight:1.8,
-          color:'#ffffff', letterSpacing:'0.01em', flexShrink:0,
+          fontFamily:FONT, fontSize:19, fontWeight: 700, lineHeight:1.8,
+          color:'#000000', letterSpacing:'0.01em', flexShrink:0,
         }}>
           {dialogue}
         </div>
 
         {/* Divider */}
-        <div style={{ height:1, background:'rgba(255,255,255,0.07)', margin:'0 28px', flexShrink:0 }} />
+        <div style={{ height:1, background:'rgba(0,0,0,0.08)', margin:'0 28px', flexShrink:0 }} />
 
         {/* Content */}
         <div style={{ padding:'20px 28px 28px', flexShrink:0 }}>
@@ -182,12 +183,12 @@ export default function GovernorHUD({ onClose, onResumeOpen, onAnimState, resume
           {view === 'menu' && (
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               <OptionButton
-                label={sent ? 'message delivered' : 'reach out to pratham'}
+                label={sent ? 'message delivered' : 'Reach out to Pratham? I will deliver your message to him no time.'}
                 disabled={sent}
                 onClick={() => { setView('email'); setDialogue(DIALOGUE.emailForm); onAnimState('idle') }}
               />
               <OptionButton
-                label="see his resume"
+                label="The lad got a good resume, wanna see?"
                 onClick={() => { onResumeOpen(); onAnimState('happy') }}
               />
             </div>
@@ -199,22 +200,22 @@ export default function GovernorHUD({ onClose, onResumeOpen, onAnimState, resume
                 placeholder="your name" value={emailData.name}
                 onChange={e => setEmailData(p => ({ ...p, name: e.target.value }))}
                 style={inputStyle}
-                onFocus={e => e.target.style.borderColor='rgba(255,255,255,0.40)'}
-                onBlur={e  => e.target.style.borderColor='rgba(255,255,255,0.15)'}
+                onFocus={e => e.target.style.borderColor='rgba(0,0,0,0.40)'}
+                onBlur={e  => e.target.style.borderColor='rgba(0,0,0,0.15)'}
               />
               <input
                 placeholder="your email" type="email" value={emailData.email}
                 onChange={e => setEmailData(p => ({ ...p, email: e.target.value }))}
                 style={inputStyle}
-                onFocus={e => e.target.style.borderColor='rgba(255,255,255,0.40)'}
-                onBlur={e  => e.target.style.borderColor='rgba(255,255,255,0.15)'}
+                onFocus={e => e.target.style.borderColor='rgba(0,0,0,0.40)'}
+                onBlur={e  => e.target.style.borderColor='rgba(0,0,0,0.15)'}
               />
               <textarea
                 placeholder="your message..." value={emailData.message}
                 onChange={e => setEmailData(p => ({ ...p, message: e.target.value }))}
                 rows={5} style={{ ...inputStyle, resize:'vertical', minHeight:110 }}
-                onFocus={e => e.target.style.borderColor='rgba(255,255,255,0.40)'}
-                onBlur={e  => e.target.style.borderColor='rgba(255,255,255,0.15)'}
+                onFocus={e => e.target.style.borderColor='rgba(0,0,0,0.40)'}
+                onBlur={e  => e.target.style.borderColor='rgba(0,0,0,0.15)'}
               />
               <div style={{ display:'flex', gap:10, marginTop:4 }}>
                 <OptionButton
@@ -232,12 +233,6 @@ export default function GovernorHUD({ onClose, onResumeOpen, onAnimState, resume
           )}
 
         </div>
-
-        {/* Scanlines */}
-        <div style={{
-          position:'absolute', inset:0, pointerEvents:'none', borderRadius:12,
-          background:'repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,0.008) 3px,rgba(255,255,255,0.008) 4px)',
-        }} />
       </div>
     </>
   )

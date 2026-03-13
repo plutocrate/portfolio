@@ -61,12 +61,18 @@ export default function ParallaxWorldScene({
 
   // ── NPC state — Romeo near entry, Barbarian at mid, Juliet near end ─────
   // Each NPC has: worldX, vel, facing, noiseT (Perlin time)
-  // Barbarian also gets patrolMin/patrolMax so he walks a wide zone at his scale
-  const barbarianMid = containerWidth * WORLD_MULT * 0.50
+  // NPC positions are ratios of WORLD_WIDTH so they match desktop layout exactly
+  const barbarianMid = WORLD_WIDTH * 0.50
   const NPCS_INIT = [
-    { worldX: 480,              vel:  60,  facing:  1, noiseT: 0,    patrolMin: 80,                patrolMax: containerWidth * 0.9 },
-    { worldX: barbarianMid,     vel: -180, facing: -1, noiseT: 55.0, patrolMin: barbarianMid - 600, patrolMax: barbarianMid + 600 },
-    { worldX: containerWidth * WORLD_MULT * 0.82, vel: -50, facing: -1, noiseT: 99.1, patrolMin: containerWidth * WORLD_MULT * 0.65, patrolMax: containerWidth * WORLD_MULT * 0.95 },
+    // Romeo — near scene entry (~15% into world)
+    { worldX: WORLD_WIDTH * 0.12, vel: 60,  facing:  1, noiseT: 0,
+      patrolMin: WORLD_WIDTH * 0.04, patrolMax: WORLD_WIDTH * 0.28 },
+    // Barbarian — dead centre of world
+    { worldX: barbarianMid,       vel: -180, facing: -1, noiseT: 55.0,
+      patrolMin: barbarianMid - WORLD_WIDTH * 0.08, patrolMax: barbarianMid + WORLD_WIDTH * 0.08 },
+    // Juliet — near far end (~82%)
+    { worldX: WORLD_WIDTH * 0.82, vel: -50,  facing: -1, noiseT: 99.1,
+      patrolMin: WORLD_WIDTH * 0.65, patrolMax: WORLD_WIDTH * 0.95 },
   ]
   const npcRef = useRef(NPCS_INIT.map(n => ({ ...n })))
   const [npcScreenPositions, setNpcScreenPositions] = useState(
@@ -423,7 +429,7 @@ export default function ParallaxWorldScene({
       {npcScreenPositions[0] && (
         <NpcSprite
           character="romeo"
-          dialogue="juliet, i can't... i can't move towards you. [ROBOTIC VOICE] gO RiGht, RIGHT"
+          dialogue="1 year, 2 years? How long have I been walking. go RIGHT,yes YOU, RIGHT!"
           x={npcScreenPositions[0].x}
           y={groundY}
           facing={npcScreenPositions[0].facing}
@@ -435,7 +441,7 @@ export default function ParallaxWorldScene({
       {npcScreenPositions[1] && (
         <NpcSprite
           character="barbarian"
-          dialogue="arghh, i don't remember how i got here... spits, and why am I glitching...."
+          dialogue="arghh, i don't remember how i got here...(spits). GOVERNER waits for YOU! "
           x={npcScreenPositions[1].x}
           y={groundY}
           facing={npcScreenPositions[1].facing}
@@ -447,7 +453,7 @@ export default function ParallaxWorldScene({
       {npcScreenPositions[2] && (
         <NpcSprite
           character="juliet"
-          dialogue="romeo, are we in a simulation? my footsteps... they are... it's not me doing it."
+          dialogue="my footsteps... it's not me doing it. just a few MORE STEPS"
           x={npcScreenPositions[2].x}
           y={groundY}
           facing={npcScreenPositions[2].facing}

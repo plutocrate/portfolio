@@ -40,14 +40,24 @@ export default function GovernorWorldScene({ containerWidth, containerHeight, st
   const [isSprinting,setSprinting]  = useState(false)
 
   const [nearGov,    setNearGov]    = useState(false)
-  const [wallDialogue, setWallDialogue] = useState(false)     // within bubble range
+  const [wallDialogue, setWallDialogue] = useState(false)
   const [hudOpen,    setHudOpen]    = useState(false)
-  const [govAnim,    setGovAnim]    = useState('walk')    // walk|idle|happy
-  const [govFacing,  setGovFacing]  = useState(-1)        // governor faces left by default (toward player entry)
+  const [govAnim,    setGovAnim]    = useState('walk')
+  const [govFacing,  setGovFacing]  = useState(-1)
   const [showBubble, setShowBubble] = useState(false)
   const [bubbleFade, setBubbleFade] = useState(false)
   const [showResume, setShowResume] = useState(false)
-  const [resumeBack, setResumeBack] = useState(false)    // flag: came back from resume
+  const [resumeBack, setResumeBack] = useState(false)
+
+  // ── Entry toast ───────────────────────────────────────────────────────────
+  const [entryToast,      setEntryToast]      = useState('in')   // 'in' | 'out' | 'gone'
+  const [entryToastPhase, setEntryToastPhase] = useState('pre')  // 'pre' | 'show' | 'fade'
+  useEffect(() => {
+    const t1 = setTimeout(() => setEntryToastPhase('show'),  200)
+    const t2 = setTimeout(() => setEntryToastPhase('fade'), 2200)
+    const t3 = setTimeout(() => setEntryToast('gone'),      3000)
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
+  }, [])
 
   const scaledSpeed  = containerWidth / GAME_WIDTH
   const groundY      = Math.round(containerHeight * GROUND_Y_RATIO)
@@ -239,6 +249,58 @@ export default function GovernorWorldScene({ containerWidth, containerHeight, st
         }
         @keyframes crtFlicker { 0%,100%{opacity:1} 92%{opacity:0.97} 94%{opacity:0.92} 96%{opacity:0.98} }
       `}</style>
+
+      {/* Entry toast — above player's head */}
+      {entryToast !== 'gone' && (
+        <div style={{
+          position:      'absolute',
+          left:          playerX,
+          top:           groundY - 180,
+          transform:     'translateX(-50%) translateY(-100%)',
+          zIndex:        80,
+          pointerEvents: 'none',
+          animation: entryToastPhase === 'show'
+            ? 'npcPop 0.4s cubic-bezier(0.16,1,0.3,1) forwards'
+            : entryToastPhase === 'fade'
+            ? 'npcFade 0.8s ease forwards'
+            : 'none',
+          opacity: entryToastPhase === 'pre' ? 0 : 1,
+        }}>
+          <div style={{
+            backdropFilter:       'blur(24px) saturate(1.8)',
+            WebkitBackdropFilter: 'blur(24px) saturate(1.8)',
+            background:           'rgba(255,255,255,0.60)',
+            border:               '2px solid rgba(255,255,255,0.92)',
+            borderRadius:         '14px',
+            padding:              '10px 20px 9px',
+            boxShadow:            '0 8px 40px rgba(0,0,0,0.25), inset 0 1.5px 0 rgba(255,255,255,0.95)',
+            whiteSpace:           'nowrap',
+            position:             'relative',
+            display:              'inline-block',
+          }}>
+            <span style={{
+              fontFamily:    '"Cormorant Garamond","Palatino Linotype",Georgia,serif',
+              fontStyle:     'italic',
+              fontWeight:    700,
+              fontSize:      'clamp(13px,2vw,20px)',
+              color:         '#0d0d1a',
+              letterSpacing: '0.01em',
+            }}>
+              what the hell is this world?
+            </span>
+            {/* Tail pointing down toward character */}
+            <div style={{
+              position: 'absolute', bottom: '-12px', left: '50%',
+              transform: 'translateX(-50%)',
+              width: 0, height: 0,
+              borderLeft: '10px solid transparent',
+              borderRight: '10px solid transparent',
+              borderTop: '12px solid rgba(255,255,255,0.75)',
+              filter: 'drop-shadow(0 3px 3px rgba(0,0,0,0.12))',
+            }} />
+          </div>
+        </div>
+      )}
 
       {/* Room wall background */}
       <div style={{ position:'absolute', inset:0, background: wallColor }} />

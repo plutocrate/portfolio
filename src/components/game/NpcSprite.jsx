@@ -7,8 +7,20 @@ const isMobile = () =>
   /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
   (typeof window !== 'undefined' && window.innerWidth <= 1024 && 'ontouchstart' in window)
 
-// Mobile scale factor — shrink NPCs on small screens
-const MOB_SCALE = () => isMobile() ? Math.min(1, window.innerWidth / 900) : 1
+// Scale factor based on screen — use height for vertical fit, width for horizontal
+const MOB_SCALE = (character) => {
+  if (!isMobile()) return 1
+  const wScale = window.innerWidth  / 1280
+  const hScale = window.innerHeight / 720
+  const base   = Math.min(wScale, hScale, 1)
+  // Barbarian is huge (displayH=480) — extra cap so head never exits screen
+  if (character === 'barbarian') {
+    const maxH   = window.innerHeight * 0.55   // at most 55% of screen height
+    const rawH   = 480 * base
+    return rawH > maxH ? (maxH / 480) : base
+  }
+  return base
+}
 
 // ── Character configs ──────────────────────────────────────────────────────
 const CHARS = {
@@ -61,9 +73,9 @@ export default function NpcSprite({
   isMoving      = true,
   playerScreenX = null,
 }) {
-  const cfg     = CHARS[character]
-  const mobScale = MOB_SCALE()
-  const lay     = makeLayout(cfg, mobScale)
+  const cfg      = CHARS[character]
+  const mobScale = MOB_SCALE(character)
+  const lay      = makeLayout(cfg, mobScale)
 
   const canvasRef    = useRef(null)
   const framesRef    = useRef([])
