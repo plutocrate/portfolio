@@ -135,7 +135,7 @@ export default function GovernorHUD({ onClose, onResumeOpen, onAnimState, resume
           {view === 'menu' && (
             <div style={{ display:'flex', flexDirection:'column', gap: mob ? 8 : 10 }}>
               <OptionButton
-                label={sent ? 'message delivered' : 'Reach out to Pratham? I will deliver your message to him no time.'}
+                label={sent ? 'message delivered' : 'Reach out to Pratham? I will deliver your message to him in no time.'}
                 disabled={sent}
                 onClick={() => { setView('email'); setDialogue(DIALOGUE.emailForm); onAnimState('idle') }}
                 btnPad={pad.btn} fontSize={fs.btnLabel} arrowSize={fs.btnArrow}
