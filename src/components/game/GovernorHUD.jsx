@@ -2,7 +2,7 @@ import { useState } from 'react'
 import emailjs from '@emailjs/browser'
 
 const DIALOGUE = {
-  intro:      "I am still building this world, the folks you saw outside they are my creation. I know their brain are a little messed up, I will write a 'purpose' algorithm for them, later. Anyways, I work for Pratham, he rented me this place. What can I do for you?",
+  intro:      "I am still building this world, the folks you saw outside they are my creation. I know their brains are a little messed up, I will write a 'purpose' algorithm for them, later. Anyways, I work for Pratham, he rented me this place. What can I do for you?",
   emailForm:  "and your message is.....",
   emailSent:  "And.... sent.",
   resumeBack: "wasn't I right about him? anything more at your service",
