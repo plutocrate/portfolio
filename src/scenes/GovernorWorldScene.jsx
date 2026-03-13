@@ -369,7 +369,7 @@ export default function GovernorWorldScene({ containerWidth, containerHeight, st
             }}>
               {isMobile()
                 ? 'tap me to chat'
-                : 'interact with me, really. press E, it should work, i hope so.'}
+                : 'I was waiting for you. PRESS E, and we can talk.'}
             </div>
             <div style={{
               position:'absolute', bottom:-12, left:'50%', transform:'translateX(-50%)',
