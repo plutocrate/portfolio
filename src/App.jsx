@@ -14,6 +14,7 @@ import ResumeScene        from './scenes/ResumeScene'
 import GovernorWorldScene  from './scenes/GovernorWorldScene'
 
 import ModeSelectDialog from './components/ui/ModeSelectDialog'
+import LoadingScreen    from './components/ui/LoadingScreen'
 import SceneTransition  from './components/game/SceneTransition'
 import BloomOverlay     from './components/game/BloomOverlay'
 
@@ -25,6 +26,7 @@ function GameApp() {
   })
   const [transitioning,   setTransitioning]   = useState(false)
   const [displayScene,    setDisplayScene]     = useState(SCENES.INTRO_MENU)
+  const [showLoading,     setShowLoading]      = useState(false)
   const [playerStartX,    setPlayerStartX]     = useState(null)
   const [playerVelocity,  setPlayerVelocity]   = useState(0)
   const [playerSprinting, setPlayerSprinting]  = useState(false)
@@ -100,14 +102,20 @@ function GameApp() {
     if (mode === 'resume') {
       dispatch({ type: 'SET_SCENE', scene: SCENES.RESUME, direction: 1 })
     } else {
-      // Normal Mode: unlock WebAudio and load all buffers
+      // Unlock audio immediately on click gesture
       if (!audioUnlocked.current) {
         audioUnlocked.current = true
         audioManager.unlock()
       }
       bgmStarted.current = true
-      dispatch({ type: 'SET_SCENE', scene: SCENES.ENTRY, direction: 1, playerStartX: 80 })
+      // Show loading screen — it will call handleLoadingReady when done
+      setShowLoading(true)
     }
+  }, [dispatch])
+
+  const handleLoadingReady = useCallback(() => {
+    setShowLoading(false)
+    dispatch({ type: 'SET_SCENE', scene: SCENES.ENTRY, direction: 1, playerStartX: 80 })
   }, [dispatch])
 
   // ── Entry → ParallaxWorld ─────────────────────────────────────────────────
@@ -178,6 +186,7 @@ function GameApp() {
       <ModeSelectDialog />
       <SceneTransition active={transitioning} onDone={handleTransitionDone} />
       <BloomOverlay />
+      {showLoading && <LoadingScreen onReady={handleLoadingReady} />}
     </div>
   )
 }
