@@ -111,10 +111,10 @@ export default function GovernorHUD({ onClose, onResumeOpen, onAnimState, resume
     setSending(true)
     try {
       await emailjs.send(
-        import.meta.env.VITE_EMAILJS_SERVICE  || 'service_portfolio',
-        import.meta.env.VITE_EMAILJS_TEMPLATE || 'template_contact',
+        'service_06d6y58',
+        'pq490pc',
         { from_name: emailData.name, from_email: emailData.email, message: emailData.message, to_email: 'prathampurohitonline@outlook.com' },
-        import.meta.env.VITE_EMAILJS_KEY || ''
+        'HgsszHkvHyhtMtI--'
       )
       setSent(true); setView('menu')
       setDialogue(DIALOGUE.emailSent); onAnimState('happy')
