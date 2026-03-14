@@ -1,85 +1,152 @@
 import { useRef, useEffect, useCallback } from 'react'
 
 /**
- * MobileControls — transparent touch zones that inject keys into pressedKeys.
- * Left half of screen = ArrowLeft, right half = ArrowRight.
- * Minimal UI — just subtle edge indicators so players know the zones.
+ * MobileControls — robust touch zones using touch identifier tracking.
+ * Each zone tracks its own touch ID so overlapping touches don't cancel each other.
+ * Left 45% = move left, Right 45% = move right. Centre 10% = neutral buffer.
  */
 export default function MobileControls({ pressedKeys, visible = true, containerWidth, containerHeight }) {
-  const leftRef  = useRef(false)
-  const rightRef = useRef(false)
+  const leftTouchId  = useRef(null)
+  const rightTouchId = useRef(null)
 
-  const press = useCallback((dir) => {
-    if (dir === 'left') {
-      if (!leftRef.current) { leftRef.current = true; pressedKeys.current.add('ArrowLeft') }
-    } else {
-      if (!rightRef.current) { rightRef.current = true; pressedKeys.current.add('ArrowRight') }
-    }
+  const pressLeft = useCallback(() => {
+    pressedKeys.current.add('ArrowLeft')
+    pressedKeys.current.delete('ArrowRight')  // can't go both ways
   }, [pressedKeys])
 
-  const release = useCallback((dir) => {
-    if (dir === 'left') {
-      leftRef.current = false; pressedKeys.current.delete('ArrowLeft')
-    } else {
-      rightRef.current = false; pressedKeys.current.delete('ArrowRight')
-    }
+  const pressRight = useCallback(() => {
+    pressedKeys.current.add('ArrowRight')
+    pressedKeys.current.delete('ArrowLeft')
+  }, [pressedKeys])
+
+  const releaseLeft = useCallback(() => {
+    pressedKeys.current.delete('ArrowLeft')
+    leftTouchId.current = null
+  }, [pressedKeys])
+
+  const releaseRight = useCallback(() => {
+    pressedKeys.current.delete('ArrowRight')
+    rightTouchId.current = null
   }, [pressedKeys])
 
   const releaseAll = useCallback(() => {
-    leftRef.current = false; rightRef.current = false
     pressedKeys.current.delete('ArrowLeft')
     pressedKeys.current.delete('ArrowRight')
+    leftTouchId.current  = null
+    rightTouchId.current = null
   }, [pressedKeys])
 
-  useEffect(() => () => releaseAll(), [releaseAll])
+  // ── Left zone handlers ────────────────────────────────────────────────────
+  const onLeftStart = useCallback((e) => {
+    e.stopPropagation()
+    e.preventDefault()
+    // Track the first new touch on this zone
+    for (const t of e.changedTouches) {
+      if (leftTouchId.current === null) {
+        leftTouchId.current = t.identifier
+        pressLeft()
+        break
+      }
+    }
+  }, [pressLeft])
+
+  const onLeftEnd = useCallback((e) => {
+    e.stopPropagation()
+    for (const t of e.changedTouches) {
+      if (t.identifier === leftTouchId.current) {
+        releaseLeft()
+        break
+      }
+    }
+  }, [releaseLeft])
+
+  // ── Right zone handlers ───────────────────────────────────────────────────
+  const onRightStart = useCallback((e) => {
+    e.stopPropagation()
+    e.preventDefault()
+    for (const t of e.changedTouches) {
+      if (rightTouchId.current === null) {
+        rightTouchId.current = t.identifier
+        pressRight()
+        break
+      }
+    }
+  }, [pressRight])
+
+  const onRightEnd = useCallback((e) => {
+    e.stopPropagation()
+    for (const t of e.changedTouches) {
+      if (t.identifier === rightTouchId.current) {
+        releaseRight()
+        break
+      }
+    }
+  }, [releaseRight])
+
+  // Safety: release everything on window touchend in case touch leaves the zone
+  useEffect(() => {
+    const safeRelease = (e) => {
+      for (const t of e.changedTouches) {
+        if (t.identifier === leftTouchId.current)  releaseLeft()
+        if (t.identifier === rightTouchId.current) releaseRight()
+      }
+    }
+    window.addEventListener('touchend',    safeRelease, { passive: true })
+    window.addEventListener('touchcancel', safeRelease, { passive: true })
+    return () => {
+      window.removeEventListener('touchend',    safeRelease)
+      window.removeEventListener('touchcancel', safeRelease)
+      releaseAll()
+    }
+  }, [releaseLeft, releaseRight, releaseAll])
 
   if (!visible) return null
 
-  const zoneH = Math.round(containerHeight * 0.55)  // bottom 55% is the touch zone
-  const zoneW = Math.round(containerWidth  * 0.4)   // each zone 40% wide
+  const zoneH = Math.round(containerHeight * 0.60)
+  const zoneW = Math.round(containerWidth  * 0.44)  // 44% each side, 12% neutral gap
 
-  const zoneStyle = (side) => ({
-    position:       'absolute',
-    bottom:         0,
-    [side]:         0,
-    width:          zoneW,
-    height:         zoneH,
-    zIndex:         40,
-    userSelect:     'none',
+  const base = {
+    position:   'absolute',
+    bottom:     0,
+    height:     zoneH,
+    width:      zoneW,
+    zIndex:     40,
+    touchAction: 'none',
+    userSelect:  'none',
     WebkitUserSelect: 'none',
-    touchAction:    'none',
-    // Subtle visual affordance
-    background:     'transparent',
-  })
-
-  // Arrow indicator at edge
-  const arrowStyle = (side) => ({
-    position:        'absolute',
-    bottom:          '14%',
-    [side]:          '10px',
-    opacity:         0.18,
-    fontSize:        '28px',
-    color:           '#fff',
-    pointerEvents:   'none',
-    userSelect:      'none',
-    fontFamily:      'monospace',
-  })
-
-  const makeHandlers = (dir) => ({
-    onTouchStart:  (e) => { e.stopPropagation(); press(dir) },
-    onTouchEnd:    (e) => { e.stopPropagation(); release(dir) },
-    onTouchCancel: (e) => { e.stopPropagation(); release(dir) },
-  })
+    // Debug: set to rgba(255,0,0,0.1) to see zones
+    background: 'transparent',
+  }
 
   return (
     <>
       {/* Left zone */}
-      <div style={zoneStyle('left')} {...makeHandlers('left')}>
-        <span style={arrowStyle('left')}>◀</span>
+      <div
+        style={{ ...base, left: 0 }}
+        onTouchStart={onLeftStart}
+        onTouchEnd={onLeftEnd}
+        onTouchCancel={onLeftEnd}
+      >
+        <span style={{
+          position: 'absolute', bottom: '14%', left: 12,
+          fontSize: 26, color: '#fff', opacity: 0.18,
+          pointerEvents: 'none', fontFamily: 'monospace',
+        }}>◀</span>
       </div>
-      {/* Right zone */}
-      <div style={zoneStyle('right')} {...makeHandlers('right')}>
-        <span style={arrowStyle('right')}>▶</span>
+
+      {/* Right zone — starts at 56% so it never overlaps the interact tap area
+          which is centred on the governor at ~62% of containerWidth            */}
+      <div
+        style={{ ...base, right: 0 }}
+        onTouchStart={onRightStart}
+        onTouchEnd={onRightEnd}
+        onTouchCancel={onRightEnd}
+      >
+        <span style={{
+          position: 'absolute', bottom: '14%', right: 12,
+          fontSize: 26, color: '#fff', opacity: 0.18,
+          pointerEvents: 'none', fontFamily: 'monospace',
+        }}>▶</span>
       </div>
     </>
   )

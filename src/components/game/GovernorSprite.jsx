@@ -14,9 +14,10 @@ const RENDER_H = (() => {
   const mob = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
     (typeof window !== 'undefined' && window.innerWidth <= 1024 && 'ontouchstart' in window)
   if (!mob) return RENDER_H_BASE
-  const wScale = window.innerWidth  / 1280
+  // On mobile: scale relative to screen height so governor is always readable
+  // Use a larger base (200) and scale by height ratio — never go below 120px
   const hScale = window.innerHeight / 720
-  return Math.round(RENDER_H_BASE * Math.min(wScale, hScale, 1))
+  return Math.round(Math.max(120, 200 * hScale))
 })()
 const SCALE          = RENDER_H / CHAR_H
 const CANVAS_PX      = Math.round(SRC * SCALE)
