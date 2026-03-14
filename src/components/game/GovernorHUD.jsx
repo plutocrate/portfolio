@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import emailjs from '@emailjs/browser'
 
 const DIALOGUE = {
-  intro:      "I created this world. I know a little uncooked, but I'm working on it. Anyways, I work for Pratham, he rented me this place. What can I do for you?",
+  intro:      "I created this world, and I know it's  a little uncooked, but I'm working on it. Anyways, I work for Pratham, he rented me this place. What can I do for you?",
   emailForm:  "and your message is.....",
   emailSent:  "And.... sent.",
   resumeBack: "wasn't I right about him? anything more at your service",
