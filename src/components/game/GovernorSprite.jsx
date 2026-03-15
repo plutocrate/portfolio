@@ -15,9 +15,10 @@ const RENDER_H = (() => {
     (typeof window !== 'undefined' && window.innerWidth <= 1024 && 'ontouchstart' in window)
   if (!mob) return RENDER_H_BASE
   // On mobile: scale relative to screen height so governor is always readable
-  // Use a larger base (200) and scale by height ratio — never go below 120px
-  const hScale = window.innerHeight / 720
-  return Math.round(Math.max(120, 200 * hScale))
+  // Scale relative to container height, cap at reasonable size on mobile
+  const h = containerHeight || window.innerHeight
+  const hScale = h / 720
+  return Math.round(Math.max(80, Math.min(200, 200 * hScale)))
 })()
 const SCALE          = RENDER_H / CHAR_H
 const CANVAS_PX      = Math.round(SRC * SCALE)
@@ -31,7 +32,7 @@ export const GOV_HEAD_IN_CANVAS = HEAD_IN_CANVAS
 export const GOV_CX_IN_CANVAS   = CX_IN_CANVAS
 
 // animation states: 'walk' | 'idle' | 'happy'
-export default function GovernorSprite({ x, y, facing = 1, animState = 'walk' }) {
+export default function GovernorSprite({ x, y, facing = 1, animState = 'walk', containerHeight }) {
   const canvasRef   = useRef(null)
   const framesRef   = useRef({ walk: [], idle: [], happy: [] })
   const frameIdxRef = useRef(0)
