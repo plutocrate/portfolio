@@ -401,7 +401,6 @@ export default function GovernorWorldScene({ containerWidth, containerHeight, st
         y={groundY}
         facing={govFacing}
         animState={hudOpen ? (resumeBack ? 'happy' : 'idle') : 'walk'}
-        containerHeight={containerHeight}
       />
       </div>
 
