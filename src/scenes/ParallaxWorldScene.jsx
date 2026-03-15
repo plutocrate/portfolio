@@ -429,7 +429,7 @@ export default function ParallaxWorldScene({
       {npcScreenPositions[0] && (
         <NpcSprite
           character="romeo"
-          dialogue="1 year, 2 years? How long have I been walking. go RIGHT,yes YOU, RIGHT!"
+          dialogue="1 year, 2 years? How long have I been walking? go RIGHT,yes YOU, RIGHT!"
           x={npcScreenPositions[0].x}
           y={groundY}
           facing={npcScreenPositions[0].facing}
@@ -441,7 +441,7 @@ export default function ParallaxWorldScene({
       {npcScreenPositions[1] && (
         <NpcSprite
           character="barbarian"
-          dialogue="arghh, i don't remember how i got here...(spits). GOVERNER waits for YOU! "
+          dialogue="arghh, i don't remember how i got here...(spits). GOVERNOR waits for YOU! "
           x={npcScreenPositions[1].x}
           y={groundY}
           facing={npcScreenPositions[1].facing}
