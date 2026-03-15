@@ -31,8 +31,8 @@ function useTypewriter(text, speed = 18) {
   return { displayed, done }
 }
 
-export default function GovernorHUD({ onClose, onResumeOpen, onAnimState, resumeBack, onRhythmBattle }) {
-  const [dialogue,  setDialogue]  = useState(resumeBack ? DIALOGUE.resumeBack : DIALOGUE.intro)
+export default function GovernorHUD({ onClose, onResumeOpen, onAnimState, resumeBack, onRhythmBattle, isReturnVisit = false, returnDialogue = null, onTerminal }) {
+  const [dialogue,  setDialogue]  = useState(resumeBack ? DIALOGUE.resumeBack : (isReturnVisit && returnDialogue) ? returnDialogue : DIALOGUE.intro)
   const [view,      setView]      = useState('menu')
   const [emailData, setEmailData] = useState({ name: '', email: '', message: '' })
   const [sending,   setSending]   = useState(false)
@@ -224,23 +224,11 @@ export default function GovernorHUD({ onClose, onResumeOpen, onAnimState, resume
                 onClick={() => { onResumeOpen(); onAnimState('happy') }}
                 mob={mob}
               />
-              {mob ? (
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 12,
-                  padding: mob ? '10px 14px' : '12px 16px',
-                  borderRadius: 8,
-                  border: '1px solid rgba(255,255,255,0.04)',
-                  opacity: 0.4,
-                }}>
-                  <span style={{ fontFamily: '"Geist Mono", monospace', fontSize: 10, color: 'rgba(255,255,255,0.2)', letterSpacing: '.05em' }}>02</span>
-                  <span style={{ fontFamily: '"Geist Mono", monospace', fontSize: mob ? 11 : 13, color: 'rgba(255,255,255,0.25)', flex: 1 }}>let's play a rhythm game?</span>
-                  <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, padding: '2px 6px', fontFamily: 'monospace', letterSpacing: '.05em' }}>PC only</span>
-                </div>
-              ) : (
+              {isReturnVisit && (
                 <GhostOption
                   index={2}
-                  label="let's play a rhythm game?"
-                  onClick={() => { onClose(); onRhythmBattle && onRhythmBattle() }}
+                  label="you can access the terminal now."
+                  onClick={() => { onClose(); onTerminal && onTerminal() }}
                   mob={mob}
                   accent
                 />

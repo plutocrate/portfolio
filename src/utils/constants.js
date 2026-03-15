@@ -30,6 +30,8 @@ export const TRANSITION_ZONE = 40
 export const GROUND_Y_RATIO = 0.72
 
 // Scenes
+export const VISIT_KEY = 'pratham_portfolio_visited'
+
 export const SCENES = {
   ENTRY: 'entry',
   PARALLAX_WORLD: 'parallax_world',
@@ -40,6 +42,7 @@ export const SCENES = {
   PROJECTS: 'projects',
   CONTACT: 'contact',
   GOVERNOR_WORLD: 'governor_world',
+  MATBURRY_WORLD: 'matburry_world',
 }
 
 export const COLORS = {

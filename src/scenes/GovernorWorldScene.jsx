@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useGame } from '../hooks/useGameState'
 import { SCENES, GAME_WIDTH, PLAYER_MAX_SPEED, PLAYER_ACCEL, PLAYER_DECEL,
-         PLAYER_SPRINT_SPEED, PLAYER_SPRINT_ACCEL, GROUND_Y_RATIO, SPRITE_SCALE } from '../utils/constants'
+         PLAYER_SPRINT_SPEED, PLAYER_SPRINT_ACCEL, GROUND_Y_RATIO, SPRITE_SCALE, VISIT_KEY, asset } from '../utils/constants'
 import { getMovementDirection } from '../utils/keyboard'
 import { audioManager, RUN_VOLUME } from '../utils/audio'
 import PlayerSprite    from '../components/game/PlayerSprite'
 import GovernorSprite, { GOV_CANVAS_PX, GOV_CX_IN_CANVAS, GOV_HEAD_IN_CANVAS, GOV_FOOT_FROM_BOT } from '../components/game/GovernorSprite'
 import CRTComputer     from '../components/game/CRTComputer'
+import ForestGlow      from '../components/game/ForestGlow'
 import GovernorHUD     from '../components/game/GovernorHUD'
 import MobileControls  from '../components/game/MobileControls'
 import ResumeScene     from './ResumeScene'
@@ -19,11 +20,25 @@ const TRIGGER_DIST   = 130
 const DIALOGUE_DIST  = 160
 const HUD_LOCK_DIST  = 220
 
+const RETURN_DIALOGUE = "hey you again, we got a problem here, go RIGHT, help me, please go. Besides that anything I can do for you?"
+const RETURN_GREETING = "hey you again! welcome back."
+
+// Check and set visit flag
+const isReturnVisit = () => {
+  try { return !!localStorage.getItem(VISIT_KEY) } catch { return false }
+}
+const markVisited = () => {
+  try { localStorage.setItem(VISIT_KEY, '1') } catch {}
+}
+
+
 export default function GovernorWorldScene({ containerWidth, containerHeight, startX, startFacing = 1, startVelocity = 0 }) {
   const { dispatch }  = useGame()
   const pressedKeys   = useRef(new Set())
-  const playerXRef    = useRef(startX ?? 120)
-  const velRef        = useRef(0)   // always start at rest — don't carry velocity into this scene
+  // startX null means coming from Matburry (right) — spawn near right edge
+  const defaultX     = startFacing === -1 ? containerWidth - 120 : 120
+  const playerXRef    = useRef(startX ?? defaultX)
+  const velRef        = useRef(0)
   const lastTimeRef   = useRef(null)
   const rafRef        = useRef(null)
   const soundRef        = useRef(false)
@@ -34,7 +49,7 @@ export default function GovernorWorldScene({ containerWidth, containerHeight, st
   const entryTimerRef   = useRef(null)
   const eHandledRef   = useRef(false)  // prevent rapid-fire on hold
 
-  const [playerX,    setPlayerX]    = useState(startX ?? 120)
+  const [playerX,    setPlayerX]    = useState(startX ?? defaultX)
   const [facing,     setFacing]     = useState(startFacing)
   const [isMoving,   setIsMoving]   = useState(false)
   const [isSprinting,setSprinting]  = useState(false)
@@ -46,8 +61,27 @@ export default function GovernorWorldScene({ containerWidth, containerHeight, st
   const [govFacing,  setGovFacing]  = useState(-1)
   const [showBubble, setShowBubble] = useState(false)
   const [bubbleFade, setBubbleFade] = useState(false)
-  const [showResume, setShowResume] = useState(false)
-  const [resumeBack, setResumeBack] = useState(false)
+  const [showResume,   setShowResume]   = useState(false)
+  const [resumeBack,   setResumeBack]   = useState(false)
+  const [terminalOpen, setTerminalOpen] = useState(false)
+  const terminalJustClosed = useRef(false)
+  const terminalOpenRef   = useRef(false)
+  const isReturn      = useRef(isReturnVisit())
+  const [returnGreet, setReturnGreet] = useState(false)
+  useEffect(() => { terminalOpenRef.current = terminalOpen }, [terminalOpen])
+
+
+
+  // ── Mark visit on mount ──────────────────────────────────────────────────
+  useEffect(() => {
+    // Always write the flag — idempotent, safe to call multiple times
+    markVisited()
+    console.log('[Visit] GovernorWorldScene mounted — flag set. isReturn:', isReturn.current)
+    if (isReturn.current) {
+      setReturnGreet(true)
+      setTimeout(() => setReturnGreet(false), 3500)
+    }
+  }, [])
 
   // ── Entry toast ───────────────────────────────────────────────────────────
   const [entryToast,      setEntryToast]      = useState('in')   // 'in' | 'out' | 'gone'
@@ -61,15 +95,18 @@ export default function GovernorWorldScene({ containerWidth, containerHeight, st
 
   const scaledSpeed  = containerWidth / GAME_WIDTH
   const groundY      = Math.round(containerHeight * GROUND_Y_RATIO)
-  const governorX    = Math.round(containerWidth * 0.62)   // NPC position
-  const computerX    = Math.round(containerWidth * 0.75)   // computer to right of NPC
-  const computerY    = groundY - 8                          // sits on ground
+  const governorX    = Math.round(containerWidth * 0.5)    // NPC position (centre, computer is also centre)
+  const computerX    = Math.round(containerWidth * 0.5)    // always centred
+  const computerY    = groundY                              // bottom of monitor = ground
+  const computerW    = isReturn.current
+    ? containerWidth * 0.88   // near full width on return
+    : Math.round(containerWidth * 0.46)  // half-width on first visit
 
   // ── Show bubble when player approaches, hide when HUD opens ──────────────
   useEffect(() => {
     if (hudOpen) {
-      setBubbleFade(true)
-      setTimeout(() => { setShowBubble(false); setBubbleFade(false) }, 500)
+      setShowBubble(false)
+      setBubbleFade(false)
     }
   }, [hudOpen])
 
@@ -82,8 +119,17 @@ export default function GovernorWorldScene({ containerWidth, containerHeight, st
   }, [])
 
   useEffect(() => {
-    pressedKeys.current.clear()
     const dn = (e) => {
+      // While terminal is open: handle terminal input + sounds here
+      if (terminalOpenRef.current) {
+        if (e.code === 'Escape') {
+          setTerminalOpen(false)
+          pressedKeys.current.clear()
+          velRef.current = 0
+          document.activeElement?.blur()
+        }
+        return  // don't add to pressedKeys
+      }
       pressedKeys.current.add(e.code)
       // E to open HUD
       if ((e.code === 'KeyE') && nearGov && !hudOpen && !eHandledRef.current) {
@@ -92,7 +138,6 @@ export default function GovernorWorldScene({ containerWidth, containerHeight, st
         setGovAnim('idle')
         setGovFacing(playerXRef.current < governorX ? 1 : -1)
       }
-      // Escape closes HUD
       if (e.code === 'Escape' && hudOpen) setHudOpen(false)
     }
     const up = (e) => {
@@ -131,7 +176,7 @@ export default function GovernorWorldScene({ containerWidth, containerHeight, st
 
       // ── Player movement (locked while HUD open) ──
       let sx = playerXRef.current
-      if (!hudOpen) {
+      if (!hudOpen && !terminalOpenRef.current) {
         const dx       = getMovementDirection(pressedKeys.current)
         const shifting = pressedKeys.current.has('ShiftLeft') || pressedKeys.current.has('ShiftRight')
         const sprinting = shifting && dx !== 0
@@ -159,10 +204,17 @@ export default function GovernorWorldScene({ containerWidth, containerHeight, st
         }
 
         // ── Scene exits ──
-        if (sx <= 10 && velRef.current < 0 && !entryLockedRef.current) {
+        // Left exit: always allowed
+        // Left exit: blocked on return visit
+        if (sx <= 10 && velRef.current < 0 && !entryLockedRef.current && !isReturn.current) {
           dispatch({ type:'SET_SCENE', scene: SCENES.PARALLAX_WORLD, direction: -1, playerStartX: containerWidth - 110, playerFacing: -1 })
         }
-        // Right wall — bounce + governor comment
+        // Right exit: to Matburry — only on return visit (first visit is blocked)
+        if (isReturn.current && sx >= containerWidth - 60 && velRef.current > 30) {
+          dispatch({ type:'SET_SCENE', scene: SCENES.MATBURRY_WORLD, direction: 1, playerStartX: 80, playerFacing: 1, playerVelocity: velRef.current })
+          return
+        }
+        // Right wall bounce (only fires when NOT moving right fast enough to exit)
         if (sx >= containerWidth - 40) {
           playerXRef.current = containerWidth - 40
           velRef.current = -Math.abs(velRef.current) * 0.4
@@ -286,7 +338,7 @@ export default function GovernorWorldScene({ containerWidth, containerHeight, st
               color:         '#0d0d1a',
               letterSpacing: '0.01em',
             }}>
-              what the hell is this world?
+              {isReturn.current ? 'huh?' : 'what the hell is this world?'}
             </span>
             {/* Tail pointing down toward character */}
             <div style={{
@@ -308,9 +360,11 @@ export default function GovernorWorldScene({ containerWidth, containerHeight, st
       {/* Ambient CRT glow spill on wall */}
       <div style={{
         position:'absolute',
-        left: computerX - 160, top: containerHeight * 0.1,
-        width: 320, height: containerHeight * 0.7,
-        background:'radial-gradient(ellipse, rgba(40,255,160,0.10) 0%, transparent 70%)',
+        left: computerX - (isReturn.current ? 300 : 160),
+        top: containerHeight * 0.05,
+        width: isReturn.current ? 600 : 320,
+        height: containerHeight * 0.8,
+        background:'radial-gradient(ellipse, rgba(40,255,160,0.12) 0%, transparent 70%)',
         pointerEvents:'none', animation:'crtFlicker 4s infinite',
       }} />
 
@@ -330,18 +384,26 @@ export default function GovernorWorldScene({ containerWidth, containerHeight, st
       </div>
 
       {/* CRT Computer */}
-      <CRTComputer x={computerX} y={computerY} width={200} active />
+      <CRTComputer x={computerX} y={computerY} width={computerW} active isReturn={isReturn.current} terminalOpen={terminalOpen} onTerminalClose={() => { setTerminalOpen(false); pressedKeys.current.clear(); velRef.current = 0; terminalJustClosed.current = true; document.activeElement?.blur() }} />
 
-      {/* Governor NPC */}
+      {/* Right-side WebGL smoke portal to Matburry */}
+      {/* Right-side WebGL smoke — only on return visit (Matburry portal) */}
+      {!isMobile() && isReturn.current && (
+        <ForestGlow originX={0.95} originY={0.5} style={{ zIndex: 3, opacity: 0.55 }} />
+      )}
+
+      {/* Governor NPC — above CRT screen */}
+      <div style={{ position:'relative', zIndex:10 }}>
       <GovernorSprite
         x={govScreenX}
         y={groundY}
         facing={govFacing}
         animState={hudOpen ? (resumeBack ? 'happy' : 'idle') : 'walk'}
       />
+      </div>
 
       {/* Speech bubble — "interact with me" */}
-      {showBubble && !hudOpen && (
+      {showBubble && !hudOpen && !terminalOpen && (
         <div style={{
           position:'absolute',
           left: bubbleX, top: bubbleY,
@@ -419,6 +481,42 @@ export default function GovernorWorldScene({ containerWidth, containerHeight, st
         </div>
       )}
 
+      {/* Return visit greeting bubble */}
+      {returnGreet && (
+        <div style={{
+          position:'absolute',
+          left: govScreenX,
+          top: bubbleY,
+          transform:'translateX(-50%) translateY(-100%)',
+          zIndex:35, pointerEvents:'none', whiteSpace:'nowrap',
+          animation:'npcPop 0.38s cubic-bezier(0.34,1.56,0.64,1) forwards',
+        }}>
+          <div style={{
+            backdropFilter:'blur(28px) saturate(2)',
+            WebkitBackdropFilter:'blur(28px) saturate(2)',
+            background:'rgba(255,255,255,0.62)',
+            border:'2px solid rgba(255,255,255,0.9)',
+            borderRadius: 16,
+            padding: isMobile() ? '8px 14px' : '13px 24px',
+            boxShadow:'0 8px 32px rgba(0,0,0,0.2)',
+            position:'relative', display:'inline-block',
+          }}>
+            <div style={{
+              fontFamily:'"Cormorant Garamond","Palatino Linotype",Georgia,serif',
+              fontStyle:'italic', fontWeight:700,
+              fontSize: isMobile() ? 13 : 18,
+              color:'#0d0d1a',
+            }}>{RETURN_GREETING}</div>
+            <div style={{
+              position:'absolute', bottom:-12, left:'50%', transform:'translateX(-50%)',
+              width:0, height:0,
+              borderLeft:'10px solid transparent', borderRight:'10px solid transparent',
+              borderTop:'12px solid rgba(255,255,255,0.75)',
+            }} />
+          </div>
+        </div>
+      )}
+
       {/* E key prompt — desktop only; mobile uses tap */}
       {nearGov && !hudOpen && !isMobile() && (
         <div style={{
@@ -433,14 +531,17 @@ export default function GovernorWorldScene({ containerWidth, containerHeight, st
       )}
 
       {/* Player */}
-      <PlayerSprite
-        x={playerX}
-        y={groundY}
-        facing={facing}
-        isMoving={isMoving && !hudOpen}
-        isSprinting={isSprinting && !hudOpen}
-        containerHeight={containerHeight}
-      />
+      {/* Player — above CRT screen (zIndex 10), brightness boosted */}
+      <div style={{ position:'relative', zIndex:10, filter: 'brightness(1.5) contrast(1.05)' }}>
+        <PlayerSprite
+          x={playerX}
+          y={groundY}
+          facing={facing}
+          isMoving={isMoving && !hudOpen && !terminalOpenRef.current}
+          isSprinting={isSprinting && !hudOpen && !terminalOpenRef.current}
+          containerHeight={containerHeight}
+        />
+      </div>
 
       {/* Mobile touch zones — movement + tap-to-interact */}
       <MobileControls
@@ -473,8 +574,12 @@ export default function GovernorWorldScene({ containerWidth, containerHeight, st
           onResumeOpen={handleResumeOpen}
           onAnimState={setGovAnim}
           resumeBack={resumeBack}
+          isReturnVisit={isReturn.current}
+          returnDialogue={RETURN_DIALOGUE}
+          onTerminal={() => { setHudOpen(false); setTerminalOpen(true); pressedKeys.current.clear(); velRef.current = 0 }}
         />
       )}
+
 
       {/* Resume overlay */}
       {showResume && (

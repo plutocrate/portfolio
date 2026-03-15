@@ -32,11 +32,11 @@ export default function ParallaxWorldScene({
 
   const pressedKeys  = useRef(new Set())
   // world-space player position — entering from left: near left edge; from right: near right edge
-  const worldXRef    = useRef(startFacing === -1 ? WORLD_WIDTH - 100 : -80)
+  const worldXRef    = useRef(startFacing === -1 ? WORLD_WIDTH - 100 : 200)  // was -80, caused off-screen on sprint entry
   const velRef       = useRef(0)  // always start stopped — player re-presses to move
-  const cameraXRef   = useRef(startFacing === -1 ? WORLD_WIDTH - containerWidth : 0)
+  const cameraXRef   = useRef(startFacing === -1 ? WORLD_WIDTH - containerWidth : 0)  // camera starts at 0 for right-facing
 
-  const [screenX,      setScreenX]   = useState(startFacing === -1 ? containerWidth - 100 : -80)
+  const [screenX,      setScreenX]   = useState(startFacing === -1 ? containerWidth - 100 : 200)
   const [playerFacing, setFacing]    = useState(startFacing)
   const [isMoving,     setIsMoving]  = useState(false)
   const [isSprinting,  setSprinting] = useState(false)

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { GameProvider, useGame } from './hooks/useGameState'
-import { SCENES, asset } from './utils/constants'
+import { SCENES, asset, VISIT_KEY } from './utils/constants'
 import { audioManager } from './utils/audio'
 
 import IntroMenuScene     from './scenes/IntroMenuScene'
@@ -12,6 +12,7 @@ import ProjectsScene      from './scenes/ProjectsScene'
 import ContactScene       from './scenes/ContactScene'
 import ResumeScene        from './scenes/ResumeScene'
 import GovernorWorldScene from './scenes/GovernorWorldScene'
+import MatburryScene      from './scenes/MatburryScene'
 
 import ModeSelectDialog from './components/ui/ModeSelectDialog'
 import LoadingScreen    from './components/ui/LoadingScreen'
@@ -27,6 +28,7 @@ export const isMobile = () =>
 const GAME_SCENES = new Set([
   SCENES.ENTRY, SCENES.PARALLAX_WORLD, SCENES.GOVERNOR_WORLD,
   SCENES.MODE_SELECT, SCENES.ABOUT, SCENES.PROJECTS, SCENES.CONTACT,
+  SCENES.MATBURRY_WORLD,
 ])
 
 function OrientationWrapper({ needsLandscape, children }) {
@@ -142,9 +144,17 @@ function GameApp() {
   const needsLandscape = isMobile() && GAME_SCENES.has(displayScene)
 
   useEffect(() => {
-    audioManager.load('run',    asset('/assets/audio/Grass_Running.wav'))
-    audioManager.load('bigrun', asset('/assets/audio/Grass_Running.wav'))
-    audioManager.load('bgm',    asset('/assets/audio/bgm.mp3'))
+    audioManager.load('run',          asset('/assets/audio/Grass_Running.wav'))
+    audioManager.load('bigrun',        asset('/assets/audio/Grass_Running.wav'))
+    audioManager.load('bgm',           asset('/assets/audio/bgm.mp3'))
+    audioManager.load('click',         asset('/assets/audio/click.ogg'))
+    audioManager.load('terminal_boot', asset('/assets/audio/terminal_boot.ogg'))
+    // Smart loading: load matburry assets only if return visitor (they'll go there directly)
+    try {
+      if (localStorage.getItem(VISIT_KEY)) {
+        audioManager.load('matburry_bgm', asset('/assets/audio/matburry_bgm.mp3'))
+      }
+    } catch {}
   }, [])
 
   useEffect(() => {
@@ -205,9 +215,19 @@ function GameApp() {
     dispatch({ type: 'SET_MODE', mode })
     if (mode === 'resume') {
       dispatch({ type: 'SET_SCENE', scene: SCENES.RESUME, direction: 1 })
+      return
+    }
+    if (!audioUnlocked.current) { audioUnlocked.current = true; audioManager.unlock() }
+    bgmStarted.current = true
+    // Read visit flag fresh — never use a cached value
+    let isReturn = false
+    try { isReturn = localStorage.getItem(VISIT_KEY) === '1' } catch {}
+    console.log('[Visit]', isReturn ? 'RETURN visitor → GovernorWorld' : 'FIRST visitor → Entry')
+    if (isReturn) {
+      // Governor is silent on return — no bgm started, matburry_bgm loaded for later
+      audioManager.load('matburry_bgm', asset('/assets/audio/matburry_bgm.mp3'))
+      dispatch({ type: 'SET_SCENE', scene: SCENES.GOVERNOR_WORLD, direction: 1, playerStartX: 120, playerFacing: 1 })
     } else {
-      if (!audioUnlocked.current) { audioUnlocked.current = true; audioManager.unlock() }
-      bgmStarted.current = true
       setShowLoading(true)
     }
   }, [dispatch])
@@ -219,7 +239,9 @@ function GameApp() {
 
   const handleEntryEnd = useCallback((velocity = 0, sprinting = false) => {
     if (bgmStarted.current) audioManager.play('bgm', { loop: true, volume: 0.20 })
-    dispatch({ type:'SET_SCENE', scene:SCENES.PARALLAX_WORLD, direction:1, playerStartX:60, playerVelocity:velocity, playerSprinting:sprinting, playerFacing:1 })
+    // Load matburry assets now since player is entering the game world
+    audioManager.load('matburry_bgm', asset('/assets/audio/matburry_bgm.mp3'))
+    dispatch({ type:'SET_SCENE', scene:SCENES.PARALLAX_WORLD, direction:1, playerStartX:200, playerVelocity:velocity, playerSprinting:sprinting, playerFacing:1 })
   }, [dispatch])
 
   const { width, height } = dimensions
@@ -232,6 +254,7 @@ function GameApp() {
         {displayScene === SCENES.ENTRY && <EntryScene containerWidth={width} containerHeight={height} onReachEnd={handleEntryEnd} startX={playerStartX} startFacing={playerFacing} />}
         {displayScene === SCENES.PARALLAX_WORLD && <ParallaxWorldScene containerWidth={width} containerHeight={height} startVelocity={playerVelocity} startFacing={playerFacing} startSprinting={playerSprinting} />}
         {displayScene === SCENES.GOVERNOR_WORLD && <GovernorWorldScene containerWidth={width} containerHeight={height} startX={playerStartX} startFacing={playerFacing} startVelocity={playerVelocity} />}
+        {displayScene === SCENES.MATBURRY_WORLD && <MatburryScene containerWidth={width} containerHeight={height} />}
         {displayScene === SCENES.MODE_SELECT && <ModeSelectScene containerWidth={width} containerHeight={height} startX={playerStartX} startFacing={playerFacing} />}
         {displayScene === SCENES.ABOUT && <AboutScene containerWidth={width} containerHeight={height} startX={playerStartX} startFacing={playerFacing} />}
         {displayScene === SCENES.PROJECTS && <ProjectsScene containerWidth={width} containerHeight={height} startX={playerStartX} startFacing={playerFacing} />}
