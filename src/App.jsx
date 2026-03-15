@@ -17,6 +17,7 @@ import MatburryScene      from './scenes/MatburryScene'
 
 import ModeSelectDialog from './components/ui/ModeSelectDialog'
 import LoadingScreen    from './components/ui/LoadingScreen'
+import ReturnLoadingScreen from './components/ui/ReturnLoadingScreen'
 import SceneTransition  from './components/game/SceneTransition'
 import BloomOverlay     from './components/game/BloomOverlay'
 
@@ -135,6 +136,7 @@ function GameApp() {
   const [transitioning, setTransitioning] = useState(false)
   const [displayScene, setDisplayScene]   = useState(SCENES.INTRO_MENU)
   const [showLoading, setShowLoading]     = useState(false)
+  const [showReturnLoading, setShowReturnLoading] = useState(false)
   const [playerStartX, setPlayerStartX]   = useState(null)
   const [playerVelocity, setPlayerVelocity] = useState(0)
   const [playerSprinting, setPlayerSprinting] = useState(false)
@@ -225,12 +227,16 @@ function GameApp() {
     try { isReturn = localStorage.getItem(VISIT_KEY) === '1' } catch {}
     console.log('[Visit]', isReturn ? 'RETURN visitor → GovernorWorld' : 'FIRST visitor → Entry')
     if (isReturn) {
-      // Governor is silent on return — no bgm started, matburry_bgm loaded for later
       audioManager.load('matburry_bgm', asset('/assets/audio/matburry_bgm.mp3'))
-      dispatch({ type: 'SET_SCENE', scene: SCENES.GOVERNOR_WORLD, direction: 1, playerStartX: 120, playerFacing: 1 })
+      setShowReturnLoading(true)
     } else {
       setShowLoading(true)
     }
+  }, [dispatch])
+
+  const handleReturnLoadingReady = useCallback(() => {
+    setShowReturnLoading(false)
+    dispatch({ type: 'SET_SCENE', scene: SCENES.GOVERNOR_WORLD, direction: 1, playerStartX: 120, playerFacing: 1 })
   }, [dispatch])
 
   const handleLoadingReady = useCallback(() => {
@@ -266,6 +272,7 @@ function GameApp() {
         <SceneTransition active={transitioning} onDone={handleTransitionDone} />
         <BloomOverlay />
         {showLoading && <LoadingScreen onReady={handleLoadingReady} />}
+        {showReturnLoading && <ReturnLoadingScreen onReady={handleReturnLoadingReady} />}
       </div>
     </OrientationWrapper>
   )
