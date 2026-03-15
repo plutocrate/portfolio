@@ -12,6 +12,7 @@ import ProjectsScene      from './scenes/ProjectsScene'
 import ContactScene       from './scenes/ContactScene'
 import ResumeScene        from './scenes/ResumeScene'
 import GovernorWorldScene from './scenes/GovernorWorldScene'
+import MobileTerminalScene from './scenes/MobileTerminalScene'
 import MatburryScene      from './scenes/MatburryScene'
 
 import ModeSelectDialog from './components/ui/ModeSelectDialog'
@@ -260,6 +261,7 @@ function GameApp() {
         {displayScene === SCENES.PROJECTS && <ProjectsScene containerWidth={width} containerHeight={height} startX={playerStartX} startFacing={playerFacing} />}
         {displayScene === SCENES.CONTACT && <ContactScene containerWidth={width} containerHeight={height} startX={playerStartX} startFacing={playerFacing} />}
         {displayScene === SCENES.RESUME && <ResumeScene />}
+        {(displayScene === SCENES.MOBILE_TERMINAL || state.currentScene === SCENES.MOBILE_TERMINAL) && <MobileTerminalScene returnScene={state.previousScene} returnStartX={state.playerStartX} returnFacing={state.playerFacing} />}
         <ModeSelectDialog />
         <SceneTransition active={transitioning} onDone={handleTransitionDone} />
         <BloomOverlay />

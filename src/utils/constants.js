@@ -1,3 +1,6 @@
+// Site-wide start time — persists across scene changes
+export const SITE_START_TIME = Date.now()
+
 // Base URL for assets (respects Vite's base config for GitHub Pages deployment)
 export const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, '')
 
@@ -43,6 +46,7 @@ export const SCENES = {
   CONTACT: 'contact',
   GOVERNOR_WORLD: 'governor_world',
   MATBURRY_WORLD: 'matburry_world',
+  MOBILE_TERMINAL: 'mobile_terminal',
 }
 
 export const COLORS = {

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
-import { asset } from '../../utils/constants'
+import { asset, SITE_START_TIME } from '../../utils/constants'
 
 // ── Resume data pulled into terminal ─────────────────────────────────────────
 const SKILLS_DATA = {
@@ -325,7 +325,7 @@ function TerminalUI({ W, H, onClose, mountTime }) {
 
 // ── MAIN ─────────────────────────────────────────────────────────────────────
 export default function CRTComputer({ x, y, width=220, active=true, isReturn=false, terminalOpen=false, onTerminalClose }) {
-  const mountTime = useRef(Date.now())
+  // Use site-wide start time so uptime persists across scene transitions
   const W = width
   const H = Math.round(width * 0.58)
   // gap: 2% on all sides so screen never touches room edges or floor
@@ -337,9 +337,9 @@ export default function CRTComputer({ x, y, width=220, active=true, isReturn=fal
   return (
     <div style={{ position:'absolute', left:x-W/2+GX, top:y-H+GY, width:IW, height:IH, zIndex:terminalOpen?20:2, overflow:'hidden', background:'#00100a' }}>
       {terminalOpen && onTerminalClose
-        ? <TerminalUI W={IW} H={IH} onClose={onTerminalClose} mountTime={mountTime.current}/>
+        ? <TerminalUI W={IW} H={IH} onClose={onTerminalClose} mountTime={SITE_START_TIME}/>
         : <>
-            <IdleCanvas W={IW} H={IH} isReturn={isReturn} mountTime={mountTime.current}/>
+            <IdleCanvas W={IW} H={IH} isReturn={isReturn} mountTime={SITE_START_TIME}/>
             <div style={{ position:'absolute', inset:0, pointerEvents:'none', backgroundImage:'repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0px,rgba(0,0,0,0.14) 1px,transparent 1px,transparent 3px)'}}/>
           </>
       }

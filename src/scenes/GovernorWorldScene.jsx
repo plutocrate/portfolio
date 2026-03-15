@@ -11,6 +11,7 @@ import ForestGlow      from '../components/game/ForestGlow'
 import GovernorHUD     from '../components/game/GovernorHUD'
 import MobileControls  from '../components/game/MobileControls'
 import ResumeScene     from './ResumeScene'
+import MobileTerminalScene from './MobileTerminalScene'
 
 const isMobile = () =>
   /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
@@ -64,6 +65,7 @@ export default function GovernorWorldScene({ containerWidth, containerHeight, st
   const [showResume,   setShowResume]   = useState(false)
   const [resumeBack,   setResumeBack]   = useState(false)
   const [terminalOpen, setTerminalOpen] = useState(false)
+  const [mobileTermOpen, setMobileTermOpen] = useState(false)
   const terminalJustClosed = useRef(false)
   const terminalOpenRef   = useRef(false)
   const isReturn      = useRef(isReturnVisit())
@@ -576,10 +578,24 @@ export default function GovernorWorldScene({ containerWidth, containerHeight, st
           resumeBack={resumeBack}
           isReturnVisit={isReturn.current}
           returnDialogue={RETURN_DIALOGUE}
-          onTerminal={() => { setHudOpen(false); setTerminalOpen(true); pressedKeys.current.clear(); velRef.current = 0 }}
+          onTerminal={() => {
+            setHudOpen(false)
+            if (isMobile()) {
+              setMobileTermOpen(true)
+            } else {
+              setTerminalOpen(true)
+              pressedKeys.current.clear()
+              velRef.current = 0
+            }
+          }}
         />
       )}
 
+
+      {/* Mobile terminal overlay — renders directly over the game, no scene transition */}
+      {mobileTermOpen && isMobile() && (
+        <MobileTerminalScene onClose={() => setMobileTermOpen(false)} />
+      )}
 
       {/* Resume overlay */}
       {showResume && (
