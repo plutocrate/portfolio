@@ -24,12 +24,12 @@ const NUM_MONKEYS     = 10
 
 const MONKEY_QUOTES = [
   'This is not ready, go back',
-  'Hali Governor',
-  'No needs of humans here, but you are',
+  "Didn't you hear him",
+  'Humans not allowed here, but you are',
   'Welcome buddy',
   'Governor trusts you.',
-  'Governor is the best',
-  'He needs your help, but later',
+  'It wants to kick out governor',
+  'He needs your help',
   "He's our GOD",
   'MUTBURRY! MUTBURRY!',
   'welcome welcome my friend!',
